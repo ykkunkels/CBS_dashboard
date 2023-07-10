@@ -1,11 +1,9 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.5         ###
+### UI version 0.0.6         ###
 ### YKK - 13-06-2023         ###
 ### Change log:              ###
-### > Updated RODBC to ODBC  ###
-### > Added retrieval time   ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -32,7 +30,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Intranet", icon = icon("atlas"), href = "https://cbsintranet/default.aspx/"),
                                                  menuItem("Checks", tabName = "checks_tab", icon = icon("book-reader")),
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.5", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
+                                                 h5("version 0.0.6", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -85,8 +83,8 @@ ui <- dashboardPage(skin = "blue",
                                 
                                 ## Loaded Data: DT ----
                                 htmlOutput(outputId = "role_txt"), br(),
-                                # selectInput(inputId = "select_sector", label = "Select sector!!", 
-                                #             choices = c(1:10), selected = 1),
+                                # selectInput(inputId = "select_sector", label = "Select sector!!",
+                                #             choices = c(1, SQL_output$colnames), selected = 1),
                                 withSpinner(DTOutput("selectedData"), type = 6),
                                 htmlOutput(outputId = "retrieval_txt")
                                 

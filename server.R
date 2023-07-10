@@ -1,7 +1,7 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.5     ###
+### Server version 0.0.6     ###
 ### YKK - 13-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
@@ -9,7 +9,7 @@
 server <- function(input, output, session) {
   
   ## Define & initialise reactiveValues objects ----
-  SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, rekening_EB = NA, rekening_LT = NA, query = NA)
+  SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, rekening_EB = NA, rekening_LT = NA, query = NA, colnames = NA)
   SQL_output <- reactiveValues(data = NA, colnames = NA)
   
   ## Define SQL connection ----
@@ -131,7 +131,10 @@ server <- function(input, output, session) {
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  OR     Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_LT,"')
                                  GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
+      # SQL_output$colnames <- colnames(SQL_output$data)
+      # print(SQL_output$colnames)
       SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      # browser()
     }
   })
   
@@ -156,11 +159,14 @@ server <- function(input, output, session) {
   })
   
   # Combine and render the selected data in a single datatable
+  # also get column names
   output$selectedData <- renderDT({
     output_data <- combinedData()
     datatable(do.call(rbind, output_data), 
               caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
               options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100))) # horizontal scrolling is TRUE
+    
+    SQL_output$colnames <- gsub(pattern = "_label", replacement = "", x = colnames(SQL_output$data))
   })
   
   ## Plotting ----
