@@ -1,32 +1,32 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.6     ###
-### YKK - 16-06-2023         ###
+### Server version 0.0.8     ###
+### YKK - 26-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
-# Define server ----
 server <- function(input, output, session) {
   
-  ## Define & initialise reactiveValues objects ----
+  ## 0. Basic Operations ----
+  # Define & initialise reactiveValues objects
   SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, rekening_EB = NA, rekening_LT = NA, query = NA, colnames = NA)
   SQL_output <- reactiveValues(data = NA, colnames = NA)
   
-  ## Define SQL connection ----
+  # Define SQL connection
   SQL_input$connection_iSR <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
   
-  ## Get CBS logo from external web-host ----
+  # Get CBS logo from external web-host
   output$logo <- renderUI({
     src <- "https://www.cbs.nl/Content/images/cbs-ld-logo.png"
     div(id = "myImage", tags$img(src = src, width = "65%", height = "auto"))
   })
   
-  ## Observe: Excel button click---- 
+  # Observe: Excel button click
   observeEvent(input$excel_button, {
     shell.exec("F:/Desktop/Dashboard_EXAMPLE/Example_Dashboard_6.6_2022V_230531.xlsb")
   })
   
-  ## Settings: Role Selection ----
+  ## 1. Settings: Role Selection ----
   output$role_txt <- renderText({
     paste("You are logged in as:", "<b>", input$selected_role, "</b>", collapse = ", ")
   })
@@ -53,11 +53,17 @@ server <- function(input, output, session) {
     updateTabItems(session, "sidebarmenu", "data_tab")
   })
   
-  ## Data Module: Preparation & Loading ----
+  ## 2. Preparation & Loading ----
   # Load and return the large data sets outside the reactive environment, for each role
   role_eindintegrator <- reactive({
     if (input$selected_role == "Eindintegrator") {
-      return(mtcars)
+      SQL_input$jaar_transacties <- "2021"
+      SQL_input$rekening_EB <- "EB"
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
+                                 GROUP BY Jaar, Periode, Status")
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -128,13 +134,12 @@ server <- function(input, output, session) {
       SQL_input$rekening_EB <- "EB"
       SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type, sum(Waarde) AS Waarde 
                                  FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 OR     Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_LT,"')
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"') AND Sector = ('",input$select_sector,"')
+                                 AND Transactiesoort = ('",input$select_transactiesoort,"') AND Waarde_Type = ('",input$select_waarde_type,"')
+                                 OR     Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_LT,"') AND Sector = ('",input$select_sector,"')
+                                 AND Transactiesoort = ('",input$select_transactiesoort,"') AND Waarde_Type = ('",input$select_waarde_type,"')
                                  GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
-      # SQL_output$colnames <- colnames(SQL_output$data)
-      # print(SQL_output$colnames)
       SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
-      # browser()
     }
   })
   
@@ -158,12 +163,10 @@ server <- function(input, output, session) {
                         role_sim_expert(), role_cwc_lid_projectleider(), role_r_expert(), role_custom())
   })
   
-  # Combine and render the selected data in a single datatable
-  # also get column names
+  # Combine and render the selected data in a single datatable. Also get column names.
   output$selectedData <- renderDT({
     
     SQL_output$colnames <- gsub(pattern = "_label", replacement = "", x = colnames(SQL_output$data))
-    print(SQL_output$colnames)
     
     output_data <- combinedData()
     datatable(do.call(rbind, output_data), 
@@ -171,7 +174,18 @@ server <- function(input, output, session) {
               options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100))) # horizontal scrolling is TRUE
   })
   
-  ## Plotting ----
+  
+  # Render JPS data
+  output$JPSData <- renderDT({
+    
+    datatable(
+      dbGetQuery(conn = (dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")), 
+                 statement = paste0("SELECT * FROM 	tbl_SR_JPSReferentie")),
+      options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100))
+    )
+  })
+  
+  ## 3. Plotting ----
   # Populate dropdown menu's with column names
   observe({
     updateSelectInput(session = session, inputId = "plot1_x", choices = SQL_output$colnames)
@@ -180,10 +194,10 @@ server <- function(input, output, session) {
     updateSelectInput(session = session, inputId = "plot1_y", choices = SQL_output$colnames)
   })
   
-  
+  # Render plot
   output$plot1 <- renderPlot({
     
-    plot(x = input$plot1_x, y = input$plot1_y)
+    plot(x = SQL_output$data[, input$plot1_x], y = SQL_output$data[, input$plot1_y])
     
   })
   

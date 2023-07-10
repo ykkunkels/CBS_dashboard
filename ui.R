@@ -1,10 +1,11 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.6         ###
-### YKK - 16-06-2023         ###
+### UI version 0.0.8         ###
+### YKK - 26-06-2023         ###
 ### Change log:              ###
-### > Added dropdown menu's  ###
+### > Added JSP              ###
+### > SQL input dropdown     ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -26,12 +27,13 @@ ui <- dashboardPage(skin = "blue",
                     dashboardSidebar(width = 230,
                                      sidebarMenu(menuItem("Menu"), id = "sidebarmenu",
                                                  menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
-                                                 menuItem("Data", tabName = "data_tab", icon = icon("file-alt")),
+                                                 menuItem("Data", tabName = "data_tab", icon = icon("table")),
+                                                 menuItem("JPS", tabName = "JPS_tab", icon = icon("book")),
                                                  menuItem("Visualisations", tabName = "visualisations_tab", icon = icon("chart-line")),
                                                  menuItem("Intranet", icon = icon("atlas"), href = "https://cbsintranet/default.aspx/"),
                                                  menuItem("Checks", tabName = "checks_tab", icon = icon("book-reader")),
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.7", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
+                                                 h5("version 0.0.8", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -84,12 +86,47 @@ ui <- dashboardPage(skin = "blue",
                                 
                                 ## Loaded Data: DT ----
                                 htmlOutput(outputId = "role_txt"), br(),
-                                # selectInput(inputId = "select_sector", label = "Select sector!!",
-                                #             choices = c(1, SQL_output$colnames), selected = 1),
+                                
+                                fluidRow(
+                                  column(4, 
+                                         # Populate "Sector" dropdown directly from SQL 
+                                         selectInput(inputId = "select_sector", label = "Sector", width = "100px",
+                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                            paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties")))
+                                         )
+                                  ),
+                                  
+                                  column(4, 
+                                         # Populate "Transactiesoort" dropdown directly from SQL 
+                                         selectInput(inputId = "select_transactiesoort", label = "Transactiesoort", width = "100px",
+                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                            paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties")))
+                                         )
+                                  ),
+                                  
+                                  column(4, 
+                                         # Populate "Waarde_type" dropdown directly from SQL 
+                                         selectInput(inputId = "select_waarde_type", label = "Waarde_Type", width = "100px",
+                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                            paste0("SELECT DISTINCT Waarde_Type FROM tbl_SR_Data_Transacties")))
+                                         )
+                                  )
+                                ),
+                                
                                 withSpinner(DTOutput("selectedData"), type = 6),
                                 htmlOutput(outputId = "retrieval_txt")
                                 
                         ), # closing Data tabItem()
+                        
+                        tabItem(tabName = "JPS_tab", # JPS tab ----
+                                
+                                ## Loaded JPS: DT ----
+                                DTOutput("JPSData")
+                                
+                        ), # closing JPS tabItem()
                         
                         tabItem(tabName = "visualisations_tab", # Visualisations tab ----
                                 
