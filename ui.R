@@ -1,7 +1,7 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.3         ###
+### UI version 0.0.4         ###
 ### YKK - 12-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
@@ -29,7 +29,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Intranet", icon = icon("atlas"), href = "https://cbsintranet/default.aspx/"),
                                                  menuItem("Checks", tabName = "checks_tab", icon = icon("book-reader")),
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.3", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
+                                                 h5("version 0.0.4", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -58,13 +58,23 @@ ui <- dashboardPage(skin = "blue",
                                 ),
                                 
                                 ## Custom inputs
-                                selectInput(inputId = "custom_years", label = "Years:", multiple = TRUE,
-                                            choices = c("Choose year(s)" = "", 
-                                                        (as.integer(substr(Sys.time(), 1, 4)) - 5):as.integer(substr(Sys.time(), 1, 4)))
+                                div(style="display: inline-block; vertical-align:top; width: 150px;",
+                                    selectInput(inputId = "custom_years", label = "", #multiple = TRUE,
+                                                choices = c("Choose year" = "", 
+                                                            (as.integer(substr(Sys.time(), 1, 4)) - 5):as.integer(substr(Sys.time(), 1, 4)))
+                                    )),
+                                div(style="display: inline-block;vertical-align:top; width: 50px;",HTML("<br>")),
+                                div(style="display: inline-block; vertical-align:top; width: 150px;",
+                                    br(),
+                                    checkboxInput(inputId = "custom_rekening_LT", label = "Rekening LT")
+                                ),
+                                div(style="display: inline-block; vertical-align:top; width: 150px;",
+                                    br(),
+                                    checkboxInput(inputId = "custom_rekening_EB", label = "Rekening EB")
                                 ),
                                 
                                 ## Input: Load data button
-                                actionButton(inputId= "load_data_button", label = paste("Load your data"))
+                                div(actionButton(inputId= "load_data_button", label = paste("Load your data")))
                                 
                         ), # closing Settings tabItem()
                         
@@ -78,7 +88,12 @@ ui <- dashboardPage(skin = "blue",
                         
                         tabItem(tabName = "visualisations_tab", # Visualisations tab ----
                                 
-                                h5("Welcome! Soon visualisation functionality will be placed here")
+                                h5("Welcome! Soon visualisation functionality will be placed here"),
+                                
+                                # selectInput(inputId = "plot1_x", label = "x-axis", choices = SQL_output$data),
+                                # selectInput(inputId = "plot1_y", label = "y-axis", choices = SQL_output$data),
+                                
+                                plotOutput(outputId = "plot1")
                                 
                         ), # closing Visualisations tabItem()
                         

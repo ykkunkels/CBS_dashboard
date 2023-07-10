@@ -1,7 +1,7 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.3     ###
+### Server version 0.0.4     ###
 ### YKK - 12-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
@@ -31,19 +31,22 @@ server <- function(input, output, session) {
     paste("You are logged in as:", "<b>", input$selected_role, "</b>", collapse = ", ")
   })
   
-  # Only show load data button when role check box is ticked
-  observe({
-    toggle(id = "load_data_button", condition = input$selected_role)
-  })
-  
   # Only show custom choices when custom role selected
-  observe({
-    toggle(id = "load_data_button", condition = input$selected_role)
+  observeEvent(input$selected_role, {
+    
+    if (!(input$selected_role == "Custom")){
+      hide(id = c("custom_years"))
+      hide(id = c("custom_rekening_LT"))
+      hide(id = c("custom_rekening_EB"))
+    }
+    
+    if (input$selected_role == "Custom"){
+      show(id = c("custom_years"))
+      show(id = c("custom_rekening_LT"))
+      show(id = c("custom_rekening_EB"))
+    }
+    
   })
-  
-  # observeEvent(if(input$selected_role == "Custom"){}, {
-  #   toggle(id = "custom_years")
-  # })
   
   # Jump to Data tab when load data button is clicked
   observeEvent(input$load_data_button, {
@@ -66,32 +69,55 @@ server <- function(input, output, session) {
                                  FROM 	tbl_SR_Data_Transacties  
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  GROUP BY Jaar, Periode, Status")
-      
       SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_transactiespecialist <- reactive({
     if (input$selected_role == "Transactiespecialist") {
-      return(iris)
+      SQL_input$jaar_transacties <- "2022"
+      SQL_input$rekening_EB <- "EB"
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
+                                 GROUP BY Jaar, Periode, Status")
+      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_duale_classificatiespecialist <- reactive({
     if (input$selected_role == "Duale classificatiespecialist") {
-      return(airmiles)
+      SQL_input$jaar_transacties <- "2023"
+      SQL_input$rekening_EB <- "EB"
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
+                                 GROUP BY Jaar, Periode, Status")
+      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_sim_expert <- reactive({
     if (input$selected_role == "SIM-expert") {
-      return(Indometh)
+      SQL_input$jaar_transacties <- "2021"
+      SQL_input$rekening_EB <- "EB"
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
+                                 GROUP BY Jaar, Periode, Status")
+      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_cwc_lid_projectleider <- reactive({
     if (input$selected_role == "CWC-lid / Projectleider") {
-      return(Orange)
+      SQL_input$jaar_transacties <- "2022"
+      SQL_input$rekening_EB <- "EB"
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
+                                 GROUP BY Jaar, Periode, Status")
+      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -105,15 +131,21 @@ server <- function(input, output, session) {
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  OR     Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_LT,"')
                                  GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
-      
       SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_custom <- reactive({
     if (input$selected_role == "Custom") {
-      return(Orange)
-      print(role_custom)
+      SQL_input$jaar_transacties <- input$custom_years
+      SQL_input$rekening_LT <- if(input$custom_rekening_LT){"LT"}
+      SQL_input$rekening_EB <- if(input$custom_rekening_EB){"EB"}
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type, sum(Waarde) AS Waarde 
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",input$custom_years,"') AND Rekening = ('",SQL_input$rekening_EB,"')
+                                 OR     Jaar >= ('",input$custom_years,"') AND Rekening = ('",SQL_input$rekening_LT ,"')
+                                 GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")     
+      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -125,10 +157,17 @@ server <- function(input, output, session) {
   
   # Combine and render the selected data in a single datatable
   output$selectedData <- renderDT({
-    # if (!is.null(input$selected_role)) {
     output_data <- combinedData()
-    datatable(do.call(rbind, output_data), options = list(scrollX = TRUE)) # horizontal scrolling is TRUE
-    # } 
+    datatable(do.call(rbind, output_data), 
+              options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100))) # horizontal scrolling is TRUE
+  })
+  
+  ## Plotting ----
+  output$plot1 <- renderPlot({
+    
+    # plot(x = input$plot1_x, y = input$plot1_y)
+    # plot(x = SQL_output$data$Jaar, y = SQL_output$data$Jaar)
+    
   })
   
 } # closing server{}
