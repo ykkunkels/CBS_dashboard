@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.4     ###
-### YKK - 12-06-2023         ###
+### Server version 0.0.5     ###
+### YKK - 13-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 # Define server ----
@@ -10,10 +10,10 @@ server <- function(input, output, session) {
   
   ## Define & initialise reactiveValues objects ----
   SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, rekening_EB = NA, rekening_LT = NA, query = NA)
-  SQL_output <- reactiveValues(data = NA)
+  SQL_output <- reactiveValues(data = NA, colnames = NA)
   
   ## Define SQL connection ----
-  SQL_input$connection_iSR <- odbcDriverConnect("driver={SQL SERVER};server=SQL_HSR_ANA_PRD\\i01,50001;database=HSR_ANA_PRD;trusted_connection=true")
+  SQL_input$connection_iSR <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
   
   ## Get CBS logo from external web-host ----
   output$logo <- renderUI({
@@ -41,9 +41,9 @@ server <- function(input, output, session) {
     }
     
     if (input$selected_role == "Custom"){
-      show(id = c("custom_years"))
-      show(id = c("custom_rekening_LT"))
-      show(id = c("custom_rekening_EB"))
+      shinyjs::show(id = c("custom_years"))
+      shinyjs::show(id = c("custom_rekening_LT"))
+      shinyjs::show(id = c("custom_rekening_EB"))
     }
     
   })
@@ -69,7 +69,7 @@ server <- function(input, output, session) {
                                  FROM 	tbl_SR_Data_Transacties  
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -81,7 +81,7 @@ server <- function(input, output, session) {
                                  FROM 	tbl_SR_Data_Transacties  
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -93,7 +93,7 @@ server <- function(input, output, session) {
                                  FROM 	tbl_SR_Data_Transacties  
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -105,7 +105,7 @@ server <- function(input, output, session) {
                                  FROM 	tbl_SR_Data_Transacties  
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -117,7 +117,7 @@ server <- function(input, output, session) {
                                  FROM 	tbl_SR_Data_Transacties  
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -131,7 +131,7 @@ server <- function(input, output, session) {
                                  WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  OR     Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_LT,"')
                                  GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
-      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -145,7 +145,7 @@ server <- function(input, output, session) {
                                  WHERE 	Jaar >= ('",input$custom_years,"') AND Rekening = ('",SQL_input$rekening_EB,"')
                                  OR     Jaar >= ('",input$custom_years,"') AND Rekening = ('",SQL_input$rekening_LT ,"')
                                  GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")     
-      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
@@ -159,6 +159,7 @@ server <- function(input, output, session) {
   output$selectedData <- renderDT({
     output_data <- combinedData()
     datatable(do.call(rbind, output_data), 
+              caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
               options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100))) # horizontal scrolling is TRUE
   })
   

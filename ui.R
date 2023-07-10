@@ -1,15 +1,18 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.4         ###
-### YKK - 12-06-2023         ###
+### UI version 0.0.5         ###
+### YKK - 13-06-2023         ###
+### Change log:              ###
+### > Updated RODBC to ODBC  ###
+### > Added retrieval time   ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
 if(!require('shiny')){install.packages('shiny', dep = TRUE)};library('shiny')
 if(!require('shinydashboard')){install.packages('shinydashboard', dep = TRUE)};library('shinydashboard')
 if(!require('shinyjs')){install.packages('shinyjs', dep = TRUE)};library('shinyjs')
-if(!require('RODBC')){install.packages('RODBC', dep = TRUE)};library('RODBC') # Misschien ODBC 
+if(!require('odbc')){install.packages('odbc', dep = TRUE)};library('odbc')
 if(!require('DT')){install.packages('DT', dep = TRUE)};library('DT')
 if(!require('shinycssloaders')){install.packages('shinycssloaders', dep = TRUE)};library('shinycssloaders')
 
@@ -29,7 +32,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Intranet", icon = icon("atlas"), href = "https://cbsintranet/default.aspx/"),
                                                  menuItem("Checks", tabName = "checks_tab", icon = icon("book-reader")),
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.4", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
+                                                 h5("version 0.0.5", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -58,17 +61,17 @@ ui <- dashboardPage(skin = "blue",
                                 ),
                                 
                                 ## Custom inputs
-                                div(style="display: inline-block; vertical-align:top; width: 150px;",
+                                div(style = "display: inline-block; vertical-align:top; width: 150px;",
                                     selectInput(inputId = "custom_years", label = "", #multiple = TRUE,
                                                 choices = c("Choose year" = "", 
                                                             (as.integer(substr(Sys.time(), 1, 4)) - 5):as.integer(substr(Sys.time(), 1, 4)))
                                     )),
-                                div(style="display: inline-block;vertical-align:top; width: 50px;",HTML("<br>")),
-                                div(style="display: inline-block; vertical-align:top; width: 150px;",
+                                div(style = "display: inline-block;vertical-align:top; width: 50px;",HTML("<br>")),
+                                div(style = "display: inline-block; vertical-align:top; width: 150px;",
                                     br(),
                                     checkboxInput(inputId = "custom_rekening_LT", label = "Rekening LT")
                                 ),
-                                div(style="display: inline-block; vertical-align:top; width: 150px;",
+                                div(style = "display: inline-block; vertical-align:top; width: 150px;",
                                     br(),
                                     checkboxInput(inputId = "custom_rekening_EB", label = "Rekening EB")
                                 ),
@@ -82,7 +85,10 @@ ui <- dashboardPage(skin = "blue",
                                 
                                 ## Loaded Data: DT ----
                                 htmlOutput(outputId = "role_txt"), br(),
-                                withSpinner(DTOutput("selectedData"), type = 6)
+                                # selectInput(inputId = "select_sector", label = "Select sector!!", 
+                                #             choices = c(1:10), selected = 1),
+                                withSpinner(DTOutput("selectedData"), type = 6),
+                                htmlOutput(outputId = "retrieval_txt")
                                 
                         ), # closing Data tabItem()
                         
