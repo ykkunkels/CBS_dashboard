@@ -1,19 +1,19 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.11    ###
-### YKK - 06-07-2023         ###
+### Server version 0.0.12    ###
+### YKK - 07-07-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
   
   ## 0. Basic Operations ----
   # Define & initialise reactiveValues objects
-  SQL_input <- reactiveValues(connection_iSR = NA, query = NA, query_JPS = NA)
+  SQL_input <- reactiveValues(connection = NA, query = NA, query_JPS = NA)
   SQL_output <- reactiveValues(data = NA, data_JPS = NA)
   
   # Define SQL connection
-  SQL_input$connection_iSR <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
+  SQL_input$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
   
   # Get CBS logo from external web-host
   output$logo <- renderUI({
@@ -36,11 +36,11 @@ server <- function(input, output, session) {
     SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type, sum(Waarde) AS Waarde 
                                  FROM 	tbl_SR_Data_Transacties  
                                  WHERE 	Jaar BETWEEN ('",(as.integer(input$select_JPS_jaar) - 3),"') AND ('",input$select_JPS_jaar,"') 
-                                 AND Sector = ('",input$select_sector,"')
-                                 AND Transactiesoort = ('",input$select_transactiesoort,"') AND Waarde_Type = ('",input$select_waarde_type,"')
+                                 AND Sector = ('",input$select_sector,"') AND Transactiesoort = ('",input$select_transactiesoort,"') 
+                                 AND Waarde_Type = ('",input$select_waarde_type,"') AND Rekening = ('",input$select_rekening,"')
                                  GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
     
-    SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+    SQL_output$data <- dbGetQuery(SQL_input$connection, SQL_input$query)
   })
   
   # Render Sector_R data
@@ -59,7 +59,7 @@ server <- function(input, output, session) {
                                    FROM 	tbl_SR_JPSReferentie
                                    WHERE 	Jaar = ('",input$select_JPS_jaar,"') AND Status = ('",input$select_JPS_status,"')")
     
-    SQL_output$data_JPS <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query_JPS)  
+    SQL_output$data_JPS <- dbGetQuery(SQL_input$connection, SQL_input$query_JPS)
     
   })
   

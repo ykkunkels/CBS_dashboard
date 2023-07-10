@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.11        ###
-### YKK - 06-07-2023         ###
+### UI version 0.0.12        ###
+### YKK - 07-07-2023         ###
 ### Change log:              ###
 ### > Jaar based on JSP      ###
 ### > Added debug file       ###
@@ -40,7 +40,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.11", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.12", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -88,47 +88,59 @@ ui <- dashboardPage(skin = "blue",
                                     tabItem(tabName = "A_tab", # A tab ----
                                             
                                             ## Navbarpage: A. tabbladen
-                                            navbarPage("A. Sectoranalyse",
-                                                       tabPanel("Plausibiliteit_R"),
-                                                       tabPanel("Sector_R",
-                                                                
-                                                                # Sector_R: Populate dropdown menu's directly from SQL 
-                                                                fluidRow(
-                                                                  column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
-                                                                         selectInput(inputId = "select_sector", label = "Sector", width = "100px", 
-                                                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                                      Database = "HSR_ANA_PRD"), 
-                                                                                                            paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties ORDER BY Sector")))
-                                                                         )
-                                                                  ),
-                                                                  
-                                                                  column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
-                                                                         selectInput(inputId = "select_transactiesoort", label = "Transactiesoort", width = "100px",
-                                                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                                      Database = "HSR_ANA_PRD"), 
-                                                                                                            paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
-                                                                         )
-                                                                  ),
-                                                                  
-                                                                  column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
-                                                                         selectInput(inputId = "select_waarde_type", label = "Waarde type", width = "100px",
-                                                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                                      Database = "HSR_ANA_PRD"), 
-                                                                                                            paste0("SELECT DISTINCT Waarde_Type FROM tbl_SR_Data_Transacties ORDER BY Waarde_Type")))
-                                                                         )
-                                                                  )
-                                                                ), # closing fluidRow()
-                                                                
-                                                                hr(style = "border-top: 1px solid #000000"),
-                                                                
-                                                                # Sector_R: Data
-                                                                withSpinner(DTOutput("data_Sector_R"), type = 6)),
+                                            navbarPage(
+                                              "A. Sectoranalyse",
+                                              tabPanel("Plausibiliteit_R"),
+                                              tabPanel("Sector_R",
                                                        
-                                                       tabPanel("Sector_B"),
-                                                       tabPanel("Saldi_Sector"),
-                                                       tabPanel("SaldiOverzicht"),
-                                                       tabPanel("Sectorverslag"),
-                                                       tabPanel("Kerncijfers"))
+                                                       # Sector_R: Populate dropdown menu's directly from SQL 
+                                                       fluidRow(
+                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
+                                                                selectInput(inputId = "select_sector", label = "Sector", width = "100px",
+                                                                            selected = "S.14",
+                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                             Database = "HSR_ANA_PRD"), 
+                                                                                                   paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties ORDER BY Sector")))
+                                                                )
+                                                         ),
+                                                         
+                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
+                                                                selectInput(inputId = "select_transactiesoort", label = "Transactiesoort", width = "100px",
+                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                             Database = "HSR_ANA_PRD"), 
+                                                                                                   paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
+                                                                )
+                                                         ),
+                                                         
+                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
+                                                                selectInput(inputId = "select_waarde_type", label = "Waarde type", width = "100px",
+                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                             Database = "HSR_ANA_PRD"), 
+                                                                                                   paste0("SELECT DISTINCT Waarde_Type FROM tbl_SR_Data_Transacties ORDER BY Waarde_Type")))
+                                                                )
+                                                         ),
+                                                         
+                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
+                                                                selectInput(inputId = "select_rekening", label = "Rekening", width = "100px",
+                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                             Database = "HSR_ANA_PRD"), 
+                                                                                                   paste0("SELECT DISTINCT Rekening FROM tbl_SR_Data_Transacties")))
+                                                                )
+                                                         )
+                                                       ), # closing fluidRow()
+                                                       
+                                                       hr(style = "border-top: 1px solid #000000"),
+                                                       
+                                                       # Sector_R: Data
+                                                       withSpinner(DTOutput("data_Sector_R"), type = 6)),
+                                              
+                                              tabPanel("Sector_B"),
+                                              tabPanel("Saldi_Sector"),
+                                              tabPanel("SaldiOverzicht"),
+                                              tabPanel("Sectorverslag"),
+                                              tabPanel("Kerncijfers")
+                                              
+                                            ) # closing navbarPage()
                                             
                                     ), # closing A tabItem()
                                     
