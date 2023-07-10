@@ -1,15 +1,15 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.8     ###
-### YKK - 26-06-2023         ###
+### Server version 0.0.9     ###
+### YKK - 03-07-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
   
   ## 0. Basic Operations ----
   # Define & initialise reactiveValues objects
-  SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, rekening_EB = NA, rekening_LT = NA, query = NA, colnames = NA)
+  SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, query = NA, colnames = NA)
   SQL_output <- reactiveValues(data = NA, colnames = NA)
   
   # Define SQL connection
@@ -31,19 +31,38 @@ server <- function(input, output, session) {
     paste("You are logged in as:", "<b>", input$selected_role, "</b>", collapse = ", ")
   })
   
+  # Initialise standard query
+  observeEvent(input$selected_role, {
+    
+    reactive(
+      
+      if (!(input$selected_role == "Custom")){
+        
+        SQL_input$jaar_transacties <- "2021"
+        
+        SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type, sum(Waarde) AS Waarde 
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Sector = ('",input$select_sector,"')
+                                 AND Transactiesoort = ('",input$select_transactiesoort,"') AND Waarde_Type = ('",input$select_waarde_type,"')
+                                 GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
+        
+        SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      }
+      
+    )
+    
+    
+  })
+  
   # Only show custom choices when custom role selected
   observeEvent(input$selected_role, {
     
     if (!(input$selected_role == "Custom")){
       hide(id = c("custom_years"))
-      hide(id = c("custom_rekening_LT"))
-      hide(id = c("custom_rekening_EB"))
     }
     
     if (input$selected_role == "Custom"){
       shinyjs::show(id = c("custom_years"))
-      shinyjs::show(id = c("custom_rekening_LT"))
-      shinyjs::show(id = c("custom_rekening_EB"))
     }
     
   })
@@ -57,101 +76,59 @@ server <- function(input, output, session) {
   # Load and return the large data sets outside the reactive environment, for each role
   role_eindintegrator <- reactive({
     if (input$selected_role == "Eindintegrator") {
-      SQL_input$jaar_transacties <- "2021"
-      SQL_input$rekening_EB <- "EB"
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
-                                 FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      
+      # SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_sectorspecialist <- reactive({
     if (input$selected_role == "Sectorspecialist") {
-      SQL_input$jaar_transacties <- "2021"
-      SQL_input$rekening_EB <- "EB"
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
-                                 FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      
+      # SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_transactiespecialist <- reactive({
     if (input$selected_role == "Transactiespecialist") {
-      SQL_input$jaar_transacties <- "2022"
-      SQL_input$rekening_EB <- "EB"
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
-                                 FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      
+      # SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_duale_classificatiespecialist <- reactive({
     if (input$selected_role == "Duale classificatiespecialist") {
-      SQL_input$jaar_transacties <- "2023"
-      SQL_input$rekening_EB <- "EB"
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
-                                 FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      
+      # SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_sim_expert <- reactive({
     if (input$selected_role == "SIM-expert") {
-      SQL_input$jaar_transacties <- "2021"
-      SQL_input$rekening_EB <- "EB"
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
-                                 FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      
+      # SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_cwc_lid_projectleider <- reactive({
     if (input$selected_role == "CWC-lid / Projectleider") {
-      SQL_input$jaar_transacties <- "2022"
-      SQL_input$rekening_EB <- "EB"
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status
-                                 FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 GROUP BY Jaar, Periode, Status")
-      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      
+      # SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_r_expert <- reactive({
     if (input$selected_role == "R expert") {
-      SQL_input$jaar_transacties <- "2021"
-      SQL_input$rekening_LT <- "LT" 
-      SQL_input$rekening_EB <- "EB"
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type, sum(Waarde) AS Waarde 
-                                 FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"') AND Sector = ('",input$select_sector,"')
-                                 AND Transactiesoort = ('",input$select_transactiesoort,"') AND Waarde_Type = ('",input$select_waarde_type,"')
-                                 OR     Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_LT,"') AND Sector = ('",input$select_sector,"')
-                                 AND Transactiesoort = ('",input$select_transactiesoort,"') AND Waarde_Type = ('",input$select_waarde_type,"')
-                                 GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
-      SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
+      
+      # SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
   })
   
   role_custom <- reactive({
     if (input$selected_role == "Custom") {
       SQL_input$jaar_transacties <- input$custom_years
-      SQL_input$rekening_LT <- if(input$custom_rekening_LT){"LT"}
-      SQL_input$rekening_EB <- if(input$custom_rekening_EB){"EB"}
       SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type, sum(Waarde) AS Waarde 
                                  FROM 	tbl_SR_Data_Transacties  
-                                 WHERE 	Jaar >= ('",input$custom_years,"') AND Rekening = ('",SQL_input$rekening_EB,"')
-                                 OR     Jaar >= ('",input$custom_years,"') AND Rekening = ('",SQL_input$rekening_LT ,"')
+                                 WHERE 	Jaar >= ('",input$custom_years,"')
                                  GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")     
       SQL_output$data <- dbGetQuery(SQL_input$connection_iSR, SQL_input$query)
     }
