@@ -1,10 +1,11 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.10        ###
-### YKK - 03-07-2023         ###
+### UI version 0.0.11        ###
+### YKK - 06-07-2023         ###
 ### Change log:              ###
-### > Changed Architecture   ###
+### > Jaar based on JSP      ###
+### > Added debug file       ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -25,6 +26,7 @@ ui <- dashboardPage(skin = "blue",
                     ## Sidebar ----
                     dashboardSidebar(width = 230,
                                      sidebarMenu(menuItem("Menu"), id = "sidebarmenu",
+                                                 menuItem("Welkom", tabName = "welkom_tab", icon = icon("door-open")),
                                                  menuItem("JPS", tabName = "JPS_tab", icon = icon("book")),
                                                  
                                                  menuItem("Sectoranalyse", tabName = "A_tab", icon = icon("a")),
@@ -38,7 +40,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.10", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.11", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -49,9 +51,37 @@ ui <- dashboardPage(skin = "blue",
                                   # Setup tabItems            
                                   tabItems(
                                     
+                                    tabItem(tabName = "welkom_tab", # welkom tab ----
+                                            
+                                            div(uiOutput("img_welkom", align = "center"),
+                                                h1("CBS Dashboard in R Shiny", align = "center")
+                                            )
+                                            
+                                    ), # closing B tabItem()
+                                    
                                     tabItem(tabName = "JPS_tab", # JPS tab ----
                                             
-                                            DTOutput("JPSData")
+                                            # data JPS: Populate drop-down menu's directly from SQL
+                                            fluidRow(
+                                              column(3, selectInput(inputId = "select_JPS_jaar", label = "Jaar", width = "100px", 
+                                                                    selected = (as.integer(substr(Sys.time(), 1, 4)) - 1),
+                                                                    choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
+                                                                                                     Database = "HSR_ANA_PRD"),
+                                                                                           paste0("SELECT DISTINCT Jaar FROM tbl_SR_JPSReferentie ORDER BY Jaar DESC")))
+                                              )
+                                              ),
+                                              column(3, selectInput(inputId = "select_JPS_status", label = "Status", width = "100px",
+                                                                    selected = "V", #! make dynamic
+                                                                    choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
+                                                                                                     Database = "HSR_ANA_PRD"),
+                                                                                           paste0("SELECT DISTINCT Status FROM tbl_SR_JPSReferentie ORDER BY Status")))
+                                              )
+                                              )
+                                            ), # closing fluidRow()
+                                            
+                                            hr(style = "border-top: 1px solid #000000"),
+                                            
+                                            withSpinner(DTOutput("data_JPS"), type = 6)
                                             
                                     ), # closing JPS tabItem()
                                     
@@ -62,44 +92,37 @@ ui <- dashboardPage(skin = "blue",
                                                        tabPanel("Plausibiliteit_R"),
                                                        tabPanel("Sector_R",
                                                                 
-                                                                # Sector_R: dropdown menu's
+                                                                # Sector_R: Populate dropdown menu's directly from SQL 
                                                                 fluidRow(
-                                                                  # Populate dropdown directly from SQL 
-                                                                  column(3, selectInput(inputId = "select_jaar", label = "Vanaf jaar", width = "100px",
-                                                                                        choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                                         Database = "HSR_ANA_PRD"), 
-                                                                                                               paste0("SELECT DISTINCT Jaar FROM tbl_SR_Data_Transacties ORDER BY Jaar DESC")))
-                                                                  )
+                                                                  column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
+                                                                         selectInput(inputId = "select_sector", label = "Sector", width = "100px", 
+                                                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                                                            paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties ORDER BY Sector")))
+                                                                         )
                                                                   ),
                                                                   
-                                                                  # Populate "Sector" dropdown directly from SQL 
-                                                                  column(3, selectInput(inputId = "select_sector", label = "Sector", width = "100px", 
-                                                                                        choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                                         Database = "HSR_ANA_PRD"), 
-                                                                                                               paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties ORDER BY Sector")))
-                                                                  )
+                                                                  column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
+                                                                         selectInput(inputId = "select_transactiesoort", label = "Transactiesoort", width = "100px",
+                                                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                                                            paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
+                                                                         )
                                                                   ),
                                                                   
-                                                                  # Populate "Transactiesoort" dropdown directly from SQL
-                                                                  column(3, selectInput(inputId = "select_transactiesoort", label = "Transactiesoort", width = "100px",
-                                                                                        choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                                         Database = "HSR_ANA_PRD"), 
-                                                                                                               paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
+                                                                  column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
+                                                                         selectInput(inputId = "select_waarde_type", label = "Waarde type", width = "100px",
+                                                                                     choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                                                            paste0("SELECT DISTINCT Waarde_Type FROM tbl_SR_Data_Transacties ORDER BY Waarde_Type")))
+                                                                         )
                                                                   )
-                                                                  ),
-                                                                  
-                                                                  # Populate "Waarde_Type" dropdown directly from SQL 
-                                                                  column(3, selectInput(inputId = "select_waarde_type", label = "Waarde type", width = "100px",
-                                                                                        choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                                         Database = "HSR_ANA_PRD"), 
-                                                                                                               paste0("SELECT DISTINCT Waarde_Type FROM tbl_SR_Data_Transacties ORDER BY Waarde_Type")))
-                                                                  )
-                                                                  )
-                                                                ),
+                                                                ), # closing fluidRow()
+                                                                
+                                                                hr(style = "border-top: 1px solid #000000"),
                                                                 
                                                                 # Sector_R: Data
-                                                                withSpinner(DTOutput("data_Sector_R"), type = 6),
-                                                                htmlOutput(outputId = "retrieval_txt")),
+                                                                withSpinner(DTOutput("data_Sector_R"), type = 6)),
                                                        
                                                        tabPanel("Sector_B"),
                                                        tabPanel("Saldi_Sector"),
