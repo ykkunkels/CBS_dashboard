@@ -2,8 +2,9 @@
 ################################
 ### TEST Shiny CBS Dashboard ###
 ### UI version 0.0.6         ###
-### YKK - 13-06-2023         ###
+### YKK - 16-06-2023         ###
 ### Change log:              ###
+### > Added dropdown menu's  ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -30,7 +31,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Intranet", icon = icon("atlas"), href = "https://cbsintranet/default.aspx/"),
                                                  menuItem("Checks", tabName = "checks_tab", icon = icon("book-reader")),
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.6", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
+                                                 h5("version 0.0.7", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -94,8 +95,8 @@ ui <- dashboardPage(skin = "blue",
                                 
                                 h5("Welcome! Soon visualisation functionality will be placed here"),
                                 
-                                # selectInput(inputId = "plot1_x", label = "x-axis", choices = SQL_output$data),
-                                # selectInput(inputId = "plot1_y", label = "y-axis", choices = SQL_output$data),
+                                selectInput(inputId = "plot1_x", label = "x-axis", choices = NULL),
+                                selectInput(inputId = "plot1_y", label = "y-axis", choices = NULL),
                                 
                                 plotOutput(outputId = "plot1")
                                 

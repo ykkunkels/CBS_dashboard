@@ -2,7 +2,7 @@
 ################################
 ### TEST Shiny CBS Dashboard ###
 ### Server version 0.0.6     ###
-### YKK - 13-06-2023         ###
+### YKK - 16-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 # Define server ----
@@ -161,19 +161,29 @@ server <- function(input, output, session) {
   # Combine and render the selected data in a single datatable
   # also get column names
   output$selectedData <- renderDT({
+    
+    SQL_output$colnames <- gsub(pattern = "_label", replacement = "", x = colnames(SQL_output$data))
+    print(SQL_output$colnames)
+    
     output_data <- combinedData()
     datatable(do.call(rbind, output_data), 
               caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
               options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100))) # horizontal scrolling is TRUE
-    
-    SQL_output$colnames <- gsub(pattern = "_label", replacement = "", x = colnames(SQL_output$data))
   })
   
   ## Plotting ----
+  # Populate dropdown menu's with column names
+  observe({
+    updateSelectInput(session = session, inputId = "plot1_x", choices = SQL_output$colnames)
+  })
+  observe({
+    updateSelectInput(session = session, inputId = "plot1_y", choices = SQL_output$colnames)
+  })
+  
+  
   output$plot1 <- renderPlot({
     
-    # plot(x = input$plot1_x, y = input$plot1_y)
-    # plot(x = SQL_output$data$Jaar, y = SQL_output$data$Jaar)
+    plot(x = input$plot1_x, y = input$plot1_y)
     
   })
   
