@@ -1,7 +1,7 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.2     ###
+### Server version 0.0.3     ###
 ### YKK - 12-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
@@ -9,7 +9,7 @@
 server <- function(input, output, session) {
   
   ## Define & initialise reactiveValues objects ----
-  SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, rekening_EB = NA, query = NA)
+  SQL_input <- reactiveValues(connection_iSR = NA, jaar_transacties = NA, rekening_EB = NA, rekening_LT = NA, query = NA)
   SQL_output <- reactiveValues(data = NA)
   
   ## Define SQL connection ----
@@ -21,9 +21,14 @@ server <- function(input, output, session) {
     div(id = "myImage", tags$img(src = src, width = "65%", height = "auto"))
   })
   
+  ## Observe: Excel button click---- 
+  observeEvent(input$excel_button, {
+    shell.exec("F:/Desktop/Dashboard_EXAMPLE/Example_Dashboard_6.6_2022V_230531.xlsb")
+  })
+  
   ## Settings: Role Selection ----
   output$role_txt <- renderText({
-    paste("You are logged in as:", input$selected_role, collapse = ", ")
+    paste("You are logged in as:", "<b>", input$selected_role, "</b>", collapse = ", ")
   })
   
   # Only show load data button when role check box is ticked
@@ -31,32 +36,30 @@ server <- function(input, output, session) {
     toggle(id = "load_data_button", condition = input$selected_role)
   })
   
+  # Only show custom choices when custom role selected
+  observe({
+    toggle(id = "load_data_button", condition = input$selected_role)
+  })
+  
+  # observeEvent(if(input$selected_role == "Custom"){}, {
+  #   toggle(id = "custom_years")
+  # })
+  
   # Jump to Data tab when load data button is clicked
   observeEvent(input$load_data_button, {
     updateTabItems(session, "sidebarmenu", "data_tab")
   })
   
-  ## Observe: Excel button click---- 
-  observeEvent(input$excel_button, {
-    shell.exec("F:/Desktop/Dashboard_EXAMPLE/Example_Dashboard_6.6_2022V_230531.xlsb")
-  })
-  
   ## Data Module: Preparation & Loading ----
   # Load and return the large data sets outside the reactive environment, for each role
-  data1 <- reactive({
-    if (input$selected_role == "Integrator") {
-      return(iris)
-    }
-  })
-  
-  data2 <- reactive({
-    if (input$selected_role == "DNB expert") {
+  role_eindintegrator <- reactive({
+    if (input$selected_role == "Eindintegrator") {
       return(mtcars)
     }
   })
   
-  data3 <- reactive({
-    if (input$selected_role == "R expert") {
+  role_sectorspecialist <- reactive({
+    if (input$selected_role == "Sectorspecialist") {
       SQL_input$jaar_transacties <- "2021"
       SQL_input$rekening_EB <- "EB"
       SQL_input$query <- paste0("SELECT Jaar, Periode, Status
@@ -65,22 +68,67 @@ server <- function(input, output, session) {
                                  GROUP BY Jaar, Periode, Status")
       
       SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+    }
+  })
+  
+  role_transactiespecialist <- reactive({
+    if (input$selected_role == "Transactiespecialist") {
+      return(iris)
+    }
+  })
+  
+  role_duale_classificatiespecialist <- reactive({
+    if (input$selected_role == "Duale classificatiespecialist") {
+      return(airmiles)
+    }
+  })
+  
+  role_sim_expert <- reactive({
+    if (input$selected_role == "SIM-expert") {
+      return(Indometh)
+    }
+  })
+  
+  role_cwc_lid_projectleider <- reactive({
+    if (input$selected_role == "CWC-lid / Projectleider") {
+      return(Orange)
+    }
+  })
+  
+  role_r_expert <- reactive({
+    if (input$selected_role == "R expert") {
+      SQL_input$jaar_transacties <- "2021"
+      SQL_input$rekening_LT <- "LT" 
+      SQL_input$rekening_EB <- "EB"
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type, sum(Waarde) AS Waarde 
+                                 FROM 	tbl_SR_Data_Transacties  
+                                 WHERE 	Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_EB,"')
+                                 OR     Jaar >= ('",SQL_input$jaar_transacties,"') AND Rekening = ('",SQL_input$rekening_LT,"')
+                                 GROUP BY Jaar, Periode, Status, Rekening, Sector, Tegensector, Transactie, Transactiesoort, Waarde_Type")
       
-      # return(SQL_output$data)
+      SQL_output$data <- sqlQuery(SQL_input$connection_iSR, SQL_input$query)
+    }
+  })
+  
+  role_custom <- reactive({
+    if (input$selected_role == "Custom") {
+      return(Orange)
+      print(role_custom)
     }
   })
   
   # Combine into a single reactive expression
   combinedData <- reactive({
-    output_data <- list(data1(), data2(), data3())
+    output_data <- list(role_eindintegrator(), role_sectorspecialist(), role_transactiespecialist(), role_duale_classificatiespecialist(),
+                        role_sim_expert(), role_cwc_lid_projectleider(), role_r_expert(), role_custom())
   })
   
   # Combine and render the selected data in a single datatable
   output$selectedData <- renderDT({
-    if (!is.null(input$selected_role)) {
-      output_data <- combinedData()
-      datatable(do.call(rbind, output_data), options = list(scrollX = TRUE)) # horizontal scrolling is TRUE
-    } 
+    # if (!is.null(input$selected_role)) {
+    output_data <- combinedData()
+    datatable(do.call(rbind, output_data), options = list(scrollX = TRUE)) # horizontal scrolling is TRUE
+    # } 
   })
   
 } # closing server{}

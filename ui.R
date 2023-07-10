@@ -1,7 +1,7 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.2         ###
+### UI version 0.0.3         ###
 ### YKK - 12-06-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
@@ -29,7 +29,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Intranet", icon = icon("atlas"), href = "https://cbsintranet/default.aspx/"),
                                                  menuItem("Checks", tabName = "checks_tab", icon = icon("book-reader")),
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.2", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
+                                                 h5("version 0.0.3", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt;
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -45,22 +45,33 @@ ui <- dashboardPage(skin = "blue",
                         tabItem(tabName = "settings_tab", # Settings tab ----
                                 
                                 ## Role selection ----
-                                checkboxGroupInput("selected_role", "Select your role to customise data selection:", 
-                                                   inline = TRUE, selected = "Integrator",
-                                                   c("Integrator" = "Integrator",
-                                                     "DNB expert" = "DNB expert",
-                                                     "R expert" = "R expert")
+                                radioButtons("selected_role", "Select your role to customise data selection:", 
+                                             inline = TRUE, selected = "Eindintegrator",
+                                             c("Eindintegrator" = "Eindintegrator",
+                                               "Sectorspecialist" = "Sectorspecialist",
+                                               "Transactiespecialist" = "Transactiespecialist",
+                                               "Duale classificatiespecialist" = "Duale classificatiespecialist",
+                                               "SIM-expert" = "SIM-expert",
+                                               "CWC-lid / Projectleider" = "CWC-lid / Projectleider",
+                                               "R expert" = "R expert",
+                                               "Custom (Advanced)" = "Custom")
                                 ),
                                 
-                                ## Input: Role button
-                                actionButton(inputId= "load_data_button", label = paste("Load your data")),
+                                ## Custom inputs
+                                selectInput(inputId = "custom_years", label = "Years:", multiple = TRUE,
+                                            choices = c("Choose year(s)" = "", 
+                                                        (as.integer(substr(Sys.time(), 1, 4)) - 5):as.integer(substr(Sys.time(), 1, 4)))
+                                ),
+                                
+                                ## Input: Load data button
+                                actionButton(inputId= "load_data_button", label = paste("Load your data"))
                                 
                         ), # closing Settings tabItem()
                         
                         tabItem(tabName = "data_tab", # Data tab ----
                                 
                                 ## Loaded Data: DT ----
-                                textOutput(outputId = "role_txt"), br(),
+                                htmlOutput(outputId = "role_txt"), br(),
                                 withSpinner(DTOutput("selectedData"), type = 6)
                                 
                         ), # closing Data tabItem()
