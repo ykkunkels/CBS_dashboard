@@ -1,11 +1,9 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### UI version 0.0.12        ###
-### YKK - 07-07-2023         ###
+### UI version 0.0.13        ###
+### YKK - 13-07-2023         ###
 ### Change log:              ###
-### > Jaar based on JSP      ###
-### > Added debug file       ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -40,7 +38,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.12", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.13", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
