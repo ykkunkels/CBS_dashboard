@@ -1,10 +1,11 @@
 
 ###################################
 ### SQL - Rosetta Stone         ###
+### version 0.0.15              ###
 ###                             ###
 ### Translating SQL to R        ###
 ### Source: logfile sqltext.sql ###
-### YKK - 17-07-2023            ###
+### YKK - 20-07-2023            ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~###
 
 ## 0. Basic Operations ----
@@ -38,10 +39,10 @@ tbl_SR_JPS_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_JPS_wtps")
 tbl_SR_JPS_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_JPS_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM vw_SR_VolgordeJPS"))
-temp_colnames <- c("JPS_Id", "Jaar", "Periode", "Status", "JPS", "JS", "Fase", "VolgordeJPS")
-tbl_SR_JPS_wtps_R <- tbl_SR_JPS_wtps_R[, temp_colnames]
+# # remake in R via SQL view
+# tbl_SR_JPS_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM vw_SR_VolgordeJPS"))
+# temp_colnames <- c("JPS_Id", "Jaar", "Periode", "Status", "JPS", "JS", "Fase", "VolgordeJPS")
+# tbl_SR_JPS_wtps_R <- tbl_SR_JPS_wtps_R[, temp_colnames]
 
 
 #  1.1.2. ##tbl_SR_SectorClassificatie_wtps ----
@@ -59,8 +60,8 @@ tbl_SR_SectorClassificatie_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_SectorClassificatie_wtps")
 tbl_SR_SectorClassificatie_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_SectorClassificatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_SectorClassificatie"))
+# # remake in R via SQL view
+# tbl_SR_SectorClassificatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_SectorClassificatie"))
 
 
 #  1.1.3. ##tbl_SR_SectorClassificatieRelatie_wtps ----
@@ -76,8 +77,8 @@ tbl_SR_SectorClassificatieRelatie_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_SectorClassificatieRelatie_wtps")
 tbl_SR_SectorClassificatieRelatie_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_SectorClassificatieRelatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_SectorClassificatieRelatie"))
+# # remake in R via SQL view
+# tbl_SR_SectorClassificatieRelatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_SectorClassificatieRelatie"))
 
 
 #  1.1.4. ##tbl_SR_TransactieClassificatie_wtps ----
@@ -94,8 +95,8 @@ tbl_SR_TransactieClassificatie_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_TransactieClassificatie_wtps")
 tbl_SR_TransactieClassificatie_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_TransactieClassificatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_TransactieClassificatie"))
+# # remake in R via SQL view
+# tbl_SR_TransactieClassificatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_TransactieClassificatie"))
 
 
 #  1.1.5. ##tbl_SR_TransactieClassificatieRelatie_wtps ----
@@ -112,8 +113,8 @@ tbl_SR_TransactieClassificatieRelatie_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_TransactieClassificatieRelatie_wtps")
 tbl_SR_TransactieClassificatieRelatie_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_TransactieClassificatieRelatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_TransactieClassificatieRelatie"))
+# # remake in R via SQL view
+# tbl_SR_TransactieClassificatieRelatie_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_TransactieClassificatieRelatie"))
 
 
 #  1.1.6. ##tbl_SR_Rechten_wtps ----
@@ -129,8 +130,8 @@ tbl_SR_Rechten_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_Rechten_wtps")
 tbl_SR_Rechten_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_Rechten_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_Rechten"))
+# # remake in R via SQL view
+# tbl_SR_Rechten_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_Rechten"))
 
 
 #  1.1.7. ##tbl_SR_OnderdeelCodes_wtps ----
@@ -146,8 +147,8 @@ tbl_SR_OnderdeelCodes_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_OnderdeelCodes_wtps")
 tbl_SR_OnderdeelCodes_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_OnderdeelCodes_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_OnderdeelCodes"))
+# # remake in R via SQL view
+# tbl_SR_OnderdeelCodes_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM tbl_SR_OnderdeelCodes"))
 
 
 #  1.1.8. ##tbl_SR_SaldiClassificatieRelatie_wtps ----
@@ -191,10 +192,10 @@ tbl_SR_JPS_wtps <- dbGetQuery(connection, temp_query)
 temp_query <- paste0("SELECT * FROM ##tbl_SR_JPS_wtps")
 tbl_SR_JPS_wtps <- dbGetQuery(connection, temp_query)
 
-# remake in R via SQL view
-tbl_SR_JPS_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM vw_SR_VolgordeJPS"))
-temp_colnames <- c("JPS_Id", "Jaar", "Periode", "Status", "JPS", "JS", "Fase", "VolgordeJPS")
-tbl_SR_JPS_wtps_R <- tbl_SR_JPS_wtps_R[, temp_colnames]
+# # remake in R via SQL view
+# tbl_SR_JPS_wtps_R <- dbGetQuery(connection, paste0("SELECT * FROM vw_SR_VolgordeJPS"))
+# temp_colnames <- c("JPS_Id", "Jaar", "Periode", "Status", "JPS", "JS", "Fase", "VolgordeJPS")
+# tbl_SR_JPS_wtps_R <- tbl_SR_JPS_wtps_R[, temp_colnames]
 
 
 #  1.2. 'Ophalen rechten' ----
@@ -323,7 +324,6 @@ temp_object_2 <- dbGetQuery(connection, temp_query)
 
 
 #  1.4. 'Ophalen data' ----
-
 #  1.4.1. ##tbl_SR_Data_Transacties_wtps ----
 temp_query <- paste0("
                      INSERT INTO ##tbl_SR_Data_Transacties_wtps (VolgordeJPS, JPS, JPS_Id, Jaar, Periode, Status, 
@@ -342,5 +342,483 @@ temp_query <- paste0("SELECT * FROM ##tbl_SR_Data_Transacties_wtps")
 tbl_SR_Data_Transacties_wtps <- dbGetQuery(connection, temp_query)
 
 
+#  1.5. 'doortellen sectoren' ----
+#  1.5.1. ##tmptbl_TransactiesTotaal_Deel1_wtps ----
+temp_query <- paste0("
+                     IF OBJECT_ID('tempdb..##tmptbl_TransactiesTotaal_Deel1_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_TransactiesTotaal_Deel1_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_TransactiesTotaal_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_TransactiesTotaal_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_Transacties_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Transacties_wtps
+                     
+                     SELECT D.JPS, D.VolgordeJPS, D.JPS_Id, D.Jaar, D.Periode, D.Status, D.Fase, D.Rekening, S.Sector_Ouder AS Sector,       
+                     TS.Sector_Ouder AS TegenSector, D.Transactie, D.TransactieSoort, D.Onderdeel, Sum(D.Waarde) AS Waarde,       
+                     D.Waarde_Type, D.Definitief, S.Tellen_Ouder AS NiveauSector, TS.Tellen_Ouder AS NiveauTegenSector 
+                     INTO ##tmptbl_TransactiesTotaal_Deel1_wtps
+                     FROM ##tbl_SR_Data_Transacties_wtps AS D 
+                     INNER JOIN ##tbl_SR_SectorClassificatieRelatie_wtps AS S ON D.JPS_Id = S.JPS_Id AND D.Rekening = S.Rekening AND D.Sector = S.Sector_Kind 
+                     LEFT JOIN ##tbl_SR_SectorClassificatieRelatie_wtps AS TS ON D.JPS_Id = TS.JPS_Id AND D.Rekening = TS.Rekening AND D.TegenSector = TS.Sector_Kind 
+                     WHERE S.Sector_Ouder <> 'S' AND (TS.Sector_Ouder <> 'S' OR TS.Sector_Ouder Is Null)
+                     GROUP BY D.JPS, D.VolgordeJPS, D.JPS_Id, D.Jaar, D.Periode, D.Status, D.Fase, D.Rekening, S.Sector_Ouder, TS.Sector_Ouder, D.Transactie,       
+                     D.TransactieSoort, D.Onderdeel, D.Waarde_Type, D.Definitief, S.Tellen_Ouder, TS.Tellen_Ouder
+                     ")
+
+tmptbl_TransactiesTotaal_Deel1_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_TransactiesTotaal_Deel1_wtps")
+tmptbl_TransactiesTotaal_Deel1_wtps <- dbGetQuery(connection, temp_query)
 
 
+#  1.6. 'toevoegen pids' ----
+#  1.6.1. ##tmptbl_TransactiesTotaal_wtps
+temp_query <- paste0("
+                     SELECT dt.*, t.Niveau AS NiveauTransactie, p.Pids, t.Volgorde, t.Naam 
+                     INTO ##tmptbl_TransactiesTotaal_wtps FROM ##tmptbl_TransactiesTotaal_Deel1_wtps AS dt 
+                     INNER JOIN ##tbl_SR_TransactieClassificatie_wtps AS t ON dt.Transactie = t.Transactie AND dt.TransactieSoort = t.TransactieSoort AND dt.JPS_Id = t.JPS_Id 
+                     LEFT JOIN ##tmptbl_TransactieRecht_wtps p ON dt.Transactie = p.Transactie 
+                     WHERE Waarde <> 0
+                     ")
+
+tmptbl_TransactiesTotaal_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_TransactiesTotaal_wtps")
+tmptbl_TransactiesTotaal_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.7. 'ophalen processtap' ----
+temp_query <- paste0("
+                     SELECT d.JPS, d.VolgordeJPS, d.JPS_Id, d.Jaar, d.Periode, d.Status, d.Fase, d.Rekening, d.Sector, d.TegenSector, d.Transactie, d.TransactieSoort, 
+                     d.Onderdeel AS Onderdeel, Sum(d.Waarde) as Waarde, d.Waarde_Type, d.Definitief, SUM(CASE WHEN d.Transactiesoort In ('P','B') THEN d.Waarde*-1 ELSE d.Waarde END) AS WaardeSaldo 
+                     FROM ##tmptbl_TransactiesTotaal_wtps AS d 
+                     WHERE NiveauTransactie=1 AND NiveauSector=1 AND (NiveauTegenSector=1 OR NiveauTegenSector Is Null) 
+                     GROUP BY JPS, VolgordeJPS, JPS_Id, Jaar, Periode, Status, Fase, Rekening, Sector, TegenSector, Transactie, TransactieSoort, d.Onderdeel, Waarde_Type, Definitief 
+                     UNION
+                     SELECT DISTINCT j.JPS, j.VolgordeJPS, j.JPS_Id, j.Jaar, j.Periode, j.Status, 'Opleveringen', d.Rekening, d.Sector, d.TegenSector, 'AF.31', d.TransactieSoort, '10', 0, d.Waarde_Type, 1 AS Definitief, 0 
+                     FROM ##tmptbl_TransactiesTotaal_wtps AS d, ##tbl_SR_JPS_wtps AS j 
+                     WHERE NiveauTransactie=1 AND NiveauSector=1 AND (NiveauTegenSector=1 OR NiveauTegenSector Is Null) 
+                     AND d.Rekening = 'FT' AND d.TegenSector = 'S.11' AND d.Sector = 'S.11' AND d.TransactieSoort = 'P' 
+                     AND j.JPS_Id In (1955,1950,1954,1953,1952,1951,1811,1810,1809,1808,1807,1802,1806,1805,1804,1803,1520,1524,1523,1522,1521,1957,2065,2038,2011,1984) 
+                     ORDER BY VolgordeJPS DESC, Sector, Fase, Rekening, TegenSector, Transactie, TransactieSoort
+                     ")
+
+temp_object_3 <- dbGetQuery(connection, temp_query)
+
+
+#  1.8. 'ophalen DataProcesstapTegenSectorS2' ----
+temp_query <- paste0("
+                     SELECT d.JPS, d.VolgordeJPS, d.JPS_Id, d.Jaar, d.Periode, d.Status, d.Fase, d.Rekening, d.Sector, d.TegenSector, d.Transactie, d.TransactieSoort, d.Onderdeel AS Onderdeel, 
+                     Sum(d.Waarde) as Waarde, d.Waarde_Type, d.Definitief, SUM(CASE WHEN d.Transactiesoort In ('P','B') THEN d.Waarde*-1 ELSE d.Waarde END) AS WaardeSaldo 
+                     FROM ##tmptbl_TransactiesTotaal_wtps AS d 
+                     WHERE Waarde_Type = 'B' AND NiveauTransactie=1 AND NiveauSector=1 AND NiveauTegenSector=1 AND TegenSector Like 'S.2%' AND Sector Not Like 'S.2%' 
+                     GROUP BY JPS, VolgordeJPS, JPS_Id, Jaar, Periode, Status, Fase, Rekening, Sector, TegenSector, Transactie, TransactieSoort, d.Onderdeel, Waarde_Type, Definitief
+                     UNION
+                     SELECT DISTINCT j.JPS, j.VolgordeJPS, j.JPS_Id, j.Jaar, j.Periode, j.Status, 'Opleveringen', d.Rekening, d.Sector, d.TegenSector, 'D.41A', d.TransactieSoort, '10', 0, d.Waarde_Type, 1 AS Definitief, 0 
+                     FROM ##tmptbl_TransactiesTotaal_wtps AS d, ##tbl_SR_JPS_wtps AS j 
+                     WHERE Waarde_Type = 'B' AND NiveauTransactie=1 AND NiveauSector=1 AND NiveauTegenSector=1 AND d.Rekening = 'LT' AND d.TegenSector Like 'S.2%' AND Sector Not Like 'S.2%' 
+                     AND j.JPS_Id In (1955,1950,1954,1953,1952,1951,1811,1810,1809,1808,1807,1802,1806,1805,1804,1803,1520,1524,1523,1522,1521,1957,2065,2038,2011,1984) 
+                     ORDER BY VolgordeJPS DESC, Sector, Fase, Rekening, TegenSector, Transactie, TransactieSoort 
+                     ")
+
+temp_object_4 <- dbGetQuery(connection, temp_query)
+
+
+#  1.9. 'ophalen DataProcesstapSectorS2' ----
+temp_query <- paste0("
+                     SELECT d.JPS, d.VolgordeJPS, d.JPS_Id, d.Jaar, d.Periode, d.Status, d.Fase, d.Rekening, d.Sector, d.TegenSector, d.Transactie, d.TransactieSoort, d.Onderdeel AS Onderdeel, 
+                     Sum(d.Waarde) as Waarde, d.Waarde_Type, d.Definitief, SUM(CASE WHEN d.Transactiesoort In ('P','B') THEN d.Waarde ELSE d.Waarde*-1 END) AS WaardeSaldo 
+                     FROM ##tmptbl_TransactiesTotaal_wtps AS d 
+                     WHERE Waarde_Type = 'R' AND NiveauTransactie=1 AND NiveauSector=1  AND Sector Like 'S.2%' 
+                     GROUP BY JPS, VolgordeJPS, JPS_Id, Jaar, Periode, Status, Fase, Rekening, Sector, TegenSector,  Transactie, TransactieSoort,  d.Onderdeel, Waarde_Type, Definitief
+                     ORDER BY VolgordeJPS DESC, Sector, Fase, Rekening, TegenSector, Transactie, TransactieSoort
+                     ")
+
+temp_object_5 <- dbGetQuery(connection, temp_query)
+
+
+#  1.10. 'ophalen commentaar' ----
+temp_query <- paste0("
+                     SELECT d.Jaar+'-'+d.Periode+'-'+d.Status AS JPS, d.JPS_Id, d.Jaar, d.Periode, d.Status, d.Fase, d.Functie, d.Iteratie, d.Rekening, d.Sector, d.TegenSector, 
+                     d.Transactie, d.TransactieSoort, d.Onderdeel, d.Waarde, d.Waarde_Type, CAST(d.Definitief as int) AS Definitief, CAST(d.Commentaar as varchar(250)) AS Commentaar 
+                     FROM tbl_SR_Data_Transacties AS d 
+                     WHERE (d.Commentaar Is Not Null AND d.Commentaar <> '') AND d.JPS_Id In (1955,1950,1954,1953,1952,1951) AND d.Onderdeel In (10, 16, 17, 18) AND d.Waarde <> 0  AND d.Definitief = 1
+                     ORDER BY d.Jaar+'-'+d.Periode+'-'+d.Status DESC, d.Sector, d.Rekening, d.TegenSector, d.Transactie, d.TransactieSoort, d.Onderdeel
+                     ")
+
+temp_object_6 <- dbGetQuery(connection, temp_query)
+
+
+#  1.11. 'aanmaken transacties' ----
+#  ##tmptbl_Transacties_wtps
+temp_query <- paste0("
+                     SELECT t.JPS, t.VolgordeJPS, t.JPS_Id, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.TransactieSoort, t.Onderdeel, 
+                     Sum(t.Waarde) As Waarde, t.Pids, t.Naam AS Omschrijving, t.Volgorde, LEFT(t.Transactie,3) AS Afk, t.NiveauSector, t.NiveauTegenSector, t.NiveauTransactie 
+                     INTO ##tmptbl_Transacties_wtps
+                     FROM ##tmptbl_TransactiesTotaal_wtps AS t 
+                     WHERE t.Waarde_Type='R' AND t.NiveauTransactie=1 
+                     GROUP BY t.JPS, t.VolgordeJPS, t.JPS_Id, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.TransactieSoort, t.Onderdeel, t.Pids, t.Naam, t.Volgorde, t.NiveauSector, t.NiveauTegenSector, t.NiveauTransactie
+                     HAVING Sum(t.Waarde) <> 0
+                     ")
+
+tmptbl_Transacties_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Transacties_wtps")
+tmptbl_Transacties_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.12. 'ophalen SX' ----
+#  ##tmptbl_Export_SXen_wtps
+temp_query <- paste0("
+                     IF OBJECT_ID('tempdb..##tmptbl_Export_Transacties_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Export_Transacties_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_Export_SV_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Export_SV_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_Export_Transactie_Identiteit_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Export_Transactie_Identiteit_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_Export_SXen_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Export_SXen_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_Export_NegBalans_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Export_NegBalans_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_Export_Jaar_Kwartaal_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Export_Jaar_Kwartaal_wtps
+                     IF OBJECT_ID('tempdb..##tmptbl_Export_Existentie_wtps') Is Not Null
+                     DROP TABLE ##tmptbl_Export_Existentie_wtps
+                     
+                     SELECT t.JPS, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, 
+                     Abs(Sum(t.Verschil)) AS Verschil, Sum(t.WaardeRand) AS WaardeRand, Sum(t.WaardeBinnenwerk) AS WaardeBinnenwerk, t.Pids 
+                     INTO ##tmptbl_Export_SXen_wtps
+                     FROM ( 
+                      SELECT t.JPS, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, 
+                      Sum(t.Waarde) AS Verschil, Sum(t.Waarde) AS WaardeRand, 0 AS WaardeBinnenwerk, t.Pids 
+                      FROM ##tmptbl_Transacties_wtps AS t 
+                      WHERE  t.Onderdeel <> '61' AND     (t.Transactie = 'P.119C' OR t.Transactie Like 'A%' OR t.Transactie Like 'D.%')
+                    	  AND t.Transactie Not In ('AF.11','D.11') AND t.Transactie Not Like 'D.63%'
+                    	  AND t.Transactie Not Like 'D.2%' AND t.Transactie Not Like 'D.3%'
+                    	  AND t.NiveauTransactie=1 AND t.NiveauSector=1 AND (t.NiveauTegenSector=1 OR t.NiveauTegenSector Is Null)
+                      GROUP BY t.JPS, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, t.Pids
+                      UNION 
+                      SELECT t.JPS, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, 
+                      Sum(t.Waarde*-1) AS Verschil, 0 AS WaardeRand, Sum(t.Waarde) AS WaardeBinnenwerk, t.Pids 
+                      FROM ##tmptbl_TransactiesTotaal_wtps AS t 
+                      WHERE  t.Onderdeel <> '61' AND  t.Waarde_Type='B' AND t.NiveauTransactie=1 AND (t.Transactie = 'P.119C' OR t.Transactie Like 'A%' OR t.Transactie Like 'D.%')
+                    	  AND t.Transactie Not In ('AF.11','D.11') AND t.Transactie Not Like 'D.63%'
+                    	  AND t.Transactie Not Like 'D.2%' AND t.Transactie Not Like 'D.3%'
+                    	  AND t.NiveauTransactie=1 AND t.NiveauSector=1 AND (t.NiveauTegenSector=1 OR t.NiveauTegenSector Is Null)
+                      GROUP BY t.JPS, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, t.Pids 
+                     ) AS t 
+                     GROUP BY t.JPS, t.Jaar, t.Periode, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, t.Pids 
+                     HAVING Abs(Sum(t.Verschil)) > 0 ORDER BY Abs(Sum(t.Verschil)) DESC
+                     ")
+
+tmptbl_Export_SXen_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Export_SXen_wtps")
+tmptbl_Export_SXen_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.13. 'ophalen transactie-id' ----
+#  ##tmptbl_Export_Transactie_Identiteit_wtps
+temp_query <- paste0("
+                     SELECT t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.Rekening, Abs(Sum(t.Waarde)) AS Verschil, t.Pids 
+                     INTO ##tmptbl_Export_Transactie_Identiteit_wtps
+                     FROM ( 
+                     SELECT t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.Rekening, Sum(t.Waarde) AS Waarde, t.Pids
+                     FROM ##tmptbl_Transacties_wtps AS t
+                     WHERE  t.Onderdeel <> '61' AND  t.Transactiesoort In ('A','M') AND ((t.Transactie In ('P.119C','NP')
+                    	OR t.Transactie Like 'A%' OR t.Transactie Like 'D.%') AND t.Transactie Not In ('AF.11','D.211A','D.213A') AND t.Transactie Not Like 'D.63%' )
+                    	AND t.NiveauTransactie=1 AND t.NiveauSector=1 AND (t.NiveauTegenSector=1 OR t.NiveauTegenSector Is Null)
+                     GROUP BY t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.Rekening, t.Pids
+                     UNION ALL
+                     SELECT t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.Rekening, Sum(t.Waarde*-1) AS Waarde, t.Pids
+                     FROM ##tmptbl_Transacties_wtps AS t
+                     WHERE  t.Onderdeel <> '61' AND  t.Transactiesoort In ('P','B') AND ((t.Transactie In ('P.119C','NP')
+                    	OR t.Transactie Like 'A%' OR t.Transactie Like 'D.%') AND t.Transactie Not In ('AF.11','D.211A','D.213A')   AND t.Transactie Not Like 'D.63%' ) 
+                    	AND t.NiveauTransactie=1 AND t.NiveauSector=1 AND (t.NiveauTegenSector=1 OR t.NiveauTegenSector Is Null)
+                     GROUP BY  t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.Rekening, t.Pids
+                     ) AS t
+                     GROUP BY t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.Rekening, t.Pids
+                     HAVING Abs(Sum(t.Waarde)) > 0 ORDER BY Abs(Sum(t.Waarde)) DESC
+                     ")
+
+tmptbl_Export_Transactie_Identiteit_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Export_Transactie_Identiteit_wtps")
+tmptbl_Export_Transactie_Identiteit_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.14. 'ophalen verschil J en Ks' ----
+#  ##tmptbl_Export_Jaar_Kwartaal_wtps
+temp_query <- paste0("
+                     SELECT t.Jaar+'-'+t.Status AS JS, t.Jaar, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, 
+                     Sum(t.WaardeJaren) AS WaardeJaren, Sum(t.WaardeKwartalen) AS WaardeKwartalen,Abs(Sum(WaardeJaren)-Sum(WaardeKwartalen)) AS VerschilJK, t.Pids 
+                     INTO ##tmptbl_Export_Jaar_Kwartaal_wtps
+                     FROM ( 
+                     SELECT t.Jaar, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, Sum(t.Waarde) AS WaardeJaren, 0 AS WaardeKwartalen, t.Pids
+                     FROM ##tmptbl_Transacties_wtps AS t
+                     WHERE  t.Onderdeel <> '61' AND  t.Transactie <> 'P.4' AND t.Rekening Not In ('BB','EB') AND t.Periode='Y' AND t.NiveauTransactie=1 AND t.NiveauSector=1 AND (t.NiveauTegenSector=1 OR t.NiveauTegenSector Is Null)
+                     GROUP BY t.Jaar, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, t.Pids
+                     UNION
+                     SELECT t.Jaar, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, 0 AS WaardeJaren, Sum(t.Waarde) AS WaardeKwartalen, t.Pids
+                     FROM ##tmptbl_Transacties_wtps AS t
+                     WHERE  t.Onderdeel <> '61' AND  t.Transactie <> 'P.4' AND t.Rekening Not In ('BB','EB') AND t.periode <> 'Y' AND t.NiveauTransactie=1 AND t.NiveauSector=1 AND (t.NiveauTegenSector=1 OR t.NiveauTegenSector Is Null)
+                     GROUP BY t.Jaar, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, t.Pids
+                     ) AS t
+                     GROUP BY t.Jaar, t.Status, t.Rekening, t.Sector, t.Transactie, t.Transactiesoort, t.Pids
+                     HAVING Abs(Sum(WaardeJaren)-Sum(WaardeKwartalen)) > 0 
+                     ORDER BY Abs(Sum(WaardeJaren)-Sum(WaardeKwartalen)) DESC
+                     ")
+
+tmptbl_Export_Jaar_Kwartaal_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Export_Jaar_Kwartaal_wtps")
+tmptbl_Export_Jaar_Kwartaal_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.15. 'ophalen Existentie JK' ----
+#  ##tmptbl_Export_Existentie_wtps
+temp_query <- paste0("
+                    SELECT t.JS, t.Jaar, t.Status, t.Rekening, t.TransactieSoort, t.Transactie, t.Sector, t.TegenSector, Sum(t.WaardeJ)AS WaardeJ, Sum(t.WaardeQ) AS WaardeQ, Waarde_Type, t.Pids 
+                    INTO ##tmptbl_Export_Existentie_wtps
+                     FROM ( 
+                    SELECT t.Jaar+'-'+t.status AS JS, t.Jaar, t.Status, t.Rekening, t.TransactieSoort, t.Transactie, t.Sector, t.TegenSector, CASE WHEN t.Periode = 'Y' THEN t.Waarde Else 0 END AS WaardeJ, 
+                    CASE WHEN (t.Periode = '1' AND t.Rekening = 'BB') OR (t.Periode = '4' AND t.Rekening = 'EB') OR (t.Periode <> 'Y' AND t.Rekening <> 'BB' AND t.Rekening <> 'EB') THEN t.Waarde Else 0 END AS WaardeQ, Waarde_Type, t.Pids
+                    FROM ##tmptbl_TransactiesTotaal_wtps AS t
+                    WHERE  t.Onderdeel <> '61' AND t.NiveauSector=1 And (t.NiveauTegenSector=1 Or t.NiveauTegenSector Is Null) And t.NiveauTransactie=1
+                    ) AS t
+                    GROUP BY t.JS, t.Jaar, t.Status, t.Rekening, t.TransactieSoort, t.Transactie, t.Sector, t.TegenSector, Waarde_Type, t.Pids
+                    HAVING (Sum(WaardeJ)=0 And Sum(WaardeQ)<>0) Or (Sum(WaardeJ)<>0 And Sum(WaardeQ)=0)
+                    ORDER BY t.JS, t.Rekening, t.TransactieSoort, t.Transactie, t.Sector, t.Waarde_Type DESC, t.TegenSector
+                     ")
+
+tmptbl_Export_Existentie_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Export_Existentie_wtps")
+tmptbl_Export_Existentie_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.16. 'ophalen EB' ----
+#  ##tmptbl_Export_NegBalans_wtps
+temp_query <- paste0("
+                    SELECT t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.TransactieSoort, t.Sector, IsNull(t.TegenSector,'Rand') AS TegenSector, Sum(t.Waarde) AS BalansWaarde, t.Pids 
+                    INTO ##tmptbl_Export_NegBalans_wtps
+                    FROM ##tmptbl_TransactiesTotaal_wtps AS t
+                    WHERE (((t.Rekening='EB' AND t.Transactie<>'P.4') OR (t.Rekening='LT' AND t.Transactie<>'D.31'))  AND t.NiveauTransactie=1 AND t.NiveauSector=1 AND (t.NiveauTegenSector=1 OR t.NiveauTegenSector Is Null)) 
+                    GROUP BY t.JPS, t.Jaar, t.Periode, t.Status, t.Transactie, t.TransactieSoort, t.Sector, t.TegenSector, t.Pids
+                    HAVING Sum(t.Waarde)<0
+                     ")
+
+tmptbl_Export_NegBalans_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Export_NegBalans_wtps")
+tmptbl_Export_NegBalans_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.17. 'ophalen SV' ----
+#  ##tmptbl_Export_SV_wtps
+temp_query <- paste0("
+                    SELECT t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, t.Sector, t.Onderdeel, Sum(t.Waarde) AS StatVerschil, t.NiveauSector 
+                    INTO ##tmptbl_Export_SV_wtps
+                    FROM ( 
+                    SELECT t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, t.Sector, t.Onderdeel, Sum(t.Waarde) AS Waarde, t.NiveauSector
+                    FROM ##tmptbl_Transacties_wtps AS t
+                    WHERE t.Transactie <> 'P.4' AND t.Transactiesoort In ('A','B') AND t.Rekening In ('FT','LT')
+                    GROUP BY t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, t.Sector, t.Onderdeel, t.NiveauSector 
+                    UNION ALL SELECT t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, t.Sector, t.Onderdeel, Sum(t.Waarde*-1) AS Waarde, t.NiveauSector
+                    FROM ##tmptbl_Transacties_wtps AS t 
+                    WHERE t.Transactie <> 'P.4' AND t.Transactiesoort In ('P','M') AND t.Rekening In ('FT','LT')
+                    GROUP BY t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, t.Sector, t.Onderdeel, t.NiveauSector
+                    ) AS t
+                    GROUP BY t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, t.Sector, t.Onderdeel, t.NiveauSector
+                     ")
+
+tmptbl_Export_SV_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Export_SV_wtps")
+tmptbl_Export_SV_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.18. 'ophalen saldischema en classificaties' ----
+#  ##tbl_SR_SaldiClassificatieRelatie_wtps
+temp_query <- paste0("
+                    IF OBJECT_ID('tempdb..##tmptbl_Export_Saldi_wtps') Is Not Null
+                    DROP TABLE ##tmptbl_Export_Saldi_wtps
+                    IF OBJECT_ID('tempdb..#SaldoSchema') Is Not Null
+                    DROP TABLE #SaldoSchema 
+                    IF OBJECT_ID('tempdb..##tbl_SR_SaldiClassificatieRelatie_wtps') Is Not Null
+                    DROP TABLE ##tbl_SR_SaldiClassificatieRelatie_wtps
+                    IF OBJECT_ID('tempdb..#cte_saldi') Is Not Null
+                    DROP TABLE #cte_saldi 
+                    
+                    SELECT  t.*, CASE WHEN t.TransactieSoort = 'S' Then t.Transactie ELSE '' END AS SaldoKind
+                    INTO #SaldoSchema
+                    FROM tbl_SR_SaldoSchema AS t
+                     WHERE t.JPS_Id In (1955,1950,1954,1953,1952,1951,1811,1810,1809,1808,1807,1802,1806,1805,1804,1803,1520,1524,1523,1522,1521,1957,2065,2038,2011,1984)
+                    -- dan voor deze jpssen de ClassificatieRelaties opnieuw ophalen
+                    ;WITH cte_saldi
+                    AS
+                    (   -- ophalen alle saldiberekening
+                       SELECT s.JPS_Id, s.Jaar, s.Periode, s.Status, s.Rekening_Data, s.Volgnummer, s.Saldo,
+                           s.Sector_Gekozen , s.Sector_Data, s.Transactie, s.TransactieSoort, s.Factor, SaldoKind
+                       FROM #SaldoSchema AS s
+                       Union ALL
+                    
+                       -- dan joinen met zichzelf om de kinderen op te halen
+                       SELECT s.JPS_Id, s.Jaar, s.Periode, s.Status, s.Rekening_Data, s.Volgnummer, s.Saldo,
+                           s.Sector_Gekozen, b.Sector_Data, b.Transactie, b.TransactieSoort, b.Factor*s.Factor AS Factor, s.SaldoKind
+                       FROM cte_saldi AS s
+                       INNER JOIN #SaldoSchema AS b ON s.JPS_Id = b.JPS_Id AND
+                           s.Sector_Gekozen = b.Sector_Gekozen And s.Rekening_Data = b.Rekening_Data And s.Transactie = b.Saldo
+                     )
+                    SELECT s.*, c.Naam AS Omschrijving, c.Volgorde AS VolgordeSaldo, 'V' + t.Volgorde AS Volgorde
+                    INTO #cte_saldi
+                    FROM cte_saldi s
+                    INNER JOIN ##tbl_SR_TransactieClassificatie_wtps c ON s.JPS_id=c.JPS_Id AND s.Saldo=c.Transactie AND c.TransactieSoort='S'
+                    INNER JOIN ##tbl_SR_TransactieClassificatie_wtps t ON s.JPS_id=t.JPS_Id AND s.Transactie=t.Transactie AND s.TransactieSoort=t.TransactieSoort
+                    WHERE t.TransactieSoort <> 'S' -- alleen de records meenemen die geen saldo meer bevatten
+                    
+                    SELECT cte.JPS_Id, cte.Jaar, cte.Periode, cte.[Status], cte.Rekening_Data AS Rekening, 
+                        cte.Volgnummer, cte.Saldo, cte.Omschrijving, cte.Sector_Gekozen, cte.Sector_Data,
+                        CASE WHEN cte.SaldoKind = '' THEN cte.Transactie ELSE cte.SaldoKind END AS SaldoKind,
+                        CASE WHEN cte.SaldoKind = '' THEN cte.TransactieSoort ELSE 'S' END AS SaldoTransactieSoort,
+                        CASE WHEN cte.SaldoKind = '' THEN cte.Volgorde ELSE cte.VolgordeSaldo END AS Volgorde,
+                        cte.Transactie, cte.TransactieSoort, cte.Factor, LTNiv, FTNiv, LT, FT
+                    INTO ##tbl_SR_SaldiClassificatieRelatie_wtps
+                    FROM #cte_saldi AS cte
+                    INNER JOIN
+                    -- ophalen niveau's van de gekozen sectoren per rekening
+                    (   SELECT DISTINCT sfl.JPS_Id, sfl.Volgnummer, sfl.Saldo, sfl.Sector_Gekozen, LTNiv, FTNiv, LT, FT
+                        FROM
+                        (   SELECT s.JPS_Id, s.Volgnummer, s.Saldo, s.Sector_Gekozen, Max(s.LT) AS LT, MAX(s.FT) AS FT
+                            FROM (
+                                SELECT DISTINCT s.JPS_Id, s.Volgnummer, s.Saldo, s.Sector_Gekozen,
+                                    CASE WHEN s.Rekening_Data = 'LT' THEN s.Rekening_Data END AS LT,
+                                    CASE WHEN s.Rekening_Data <> 'LT' THEN 'FR' END AS FT
+                                FROM dbo.tbl_SR_SaldoSchema AS s
+                            ) AS s
+                            GROUP BY s.JPS_Id, s.Volgnummer, s.Saldo, s.Sector_Gekozen
+                        ) AS sfl
+                        LEFT JOIN
+                        (   SELECT JPS_Id, Sector, Max(LTNiv) AS LTNiv, MAX(FTNiv) AS FTNiv
+                                FROM (
+                                SELECT JPS_Id, Sector,
+                                    CASE WHEN Rekening = 'LT' THEN Niveau END AS LTNiv,
+                                    CASE WHEN Rekening <> 'LT' THEN Niveau END AS FTNiv
+                                FROM dbo.tbl_SR_SectorClassificatie
+                            ) AS sc
+                            GROUP BY JPS_Id, Sector
+                        ) AS sc ON sfl.JPS_Id = sc.JPS_Id AND sfl.Sector_Gekozen = sc.Sector
+                    ) AS sc ON cte.JPS_Id = sc.JPS_Id AND cte.Volgnummer = sc.Volgnummer AND cte.Saldo = sc.Saldo
+                        AND cte.Sector_Gekozen = sc.Sector_Gekozen
+                     ")
+
+temp_object_7 <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tbl_SR_SaldiClassificatieRelatie_wtps")
+tbl_SR_SaldiClassificatieRelatie_wtps_2 <- dbGetQuery(connection, temp_query)
+
+
+#  1.19. 'ophalen saldi' ----
+#  ##tmptbl_Export_Saldi_wtps
+temp_query <- paste0("
+                    SELECT t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, SC.Sector_Ouder AS Sector, SC.Tellen_Ouder AS Integratieniveau, s.Volgnummer, s.Saldo, s.Omschrijving, t.Rekening,
+                    t.Onderdeel AS Onderdeel, s.SaldoKind AS Transactie, s.Volgorde, s.SaldoTransactieSoort AS Transactiesoort, 
+                    Sum(t.Waarde * s.factor) AS SaldoWaarde, 
+                    CASE WHEN s.SaldoTransactieSoort = 'S' THEN Sum(t.Waarde * s.factor) ELSE Sum(t.Waarde) END AS Waarde 
+                    INTO ##tmptbl_Export_Saldi_wtps
+                    FROM ##tbl_SR_Data_Transacties_wtps AS t 
+                    INNER JOIN ##tbl_SR_SaldiClassificatieRelatie_wtps AS s ON t.JPS_Id = s.JPS_Id AND t.Sector = s.Sector_Data AND t.Rekening = s.Rekening
+                    AND t.Transactie = s.Transactie AND t.TransactieSoort = s.TransactieSoort 
+                    INNER JOIN ##tbl_SR_SectorClassificatieRelatie_wtps AS SC ON t.JPS_Id = SC.JPS_Id AND t.Rekening = SC.Rekening 
+                    WHERE SC.Sector_Ouder <> 'S' AND Waarde_Type = 'R' 
+                       AND ( s.Sector_Gekozen = SC.Sector_Kind 
+                        OR ( s.Sector_Gekozen = SC.Sector_Ouder AND s.LT = s.FT AND 
+                            (s.LTNiv = 0 AND s.FTNiv = 1) OR (s.LTNiv = 1 AND s.FTNiv = 0) ) ) 
+                    GROUP BY t.JPS, t.VolgordeJPS, t.Jaar, t.Periode, t.Status, SC.Sector_Ouder, SC.Tellen_Ouder,
+                    s.Volgnummer, s.Saldo, s.Omschrijving, t.Rekening, s.SaldoKind, s.Volgorde, s.SaldoTransactieSoort, t.Onderdeel
+                     ")
+
+tmptbl_Export_Saldi_wtps <- dbGetQuery(connection, temp_query)
+
+temp_query <- paste0("SELECT * FROM ##tmptbl_Export_Saldi_wtps")
+tmptbl_Export_Saldi_wtps <- dbGetQuery(connection, temp_query)
+
+
+#  1.20. 'zetdataexcel saldidetail' ----
+temp_query <- paste0("
+                    SELECT * FROM ( SELECT * FROM ##tmptbl_Export_Saldi_wtps
+                    WHERE Integratieniveau=1 AND Waarde<>0 
+                    UNION 
+                    SELECT JPS, VolgordeJPS, Jaar, Periode, Status, Sector, Integratieniveau, Volgnummer, 'Totaal ' + Saldo AS Saldo, Omschrijving, 
+                       '' AS Rekening, Onderdeel, '' AS Transactie, 'V99999' as Volgorde, 'S' AS Transactiesoort, SUM(SaldoWaarde) AS SaldoWaarde, SUM(SaldoWaarde) AS Waarde 
+                    FROM ##tmptbl_Export_Saldi_wtps
+                    WHERE Integratieniveau=1 AND Waarde<>0 
+                    GROUP BY JPS, VolgordeJPS, Jaar, Periode, Status, Sector, Integratieniveau, Volgnummer, Saldo, Omschrijving, Onderdeel
+                    ) AS t 
+                     ORDER BY VolgordeJPS DESC, Volgnummer, Saldo, Sector, Transactie
+                     ")
+
+temp_object_8 <- dbGetQuery(connection, temp_query)
+
+
+#  1.21. 'zetdataexcel SaldiDataDetailSectorS2' ----
+temp_query <- paste0("
+                    SELECT * FROM ##tmptbl_Export_Saldi_wtps WHERE Integratieniveau=1 AND Waarde<>0 AND Sector Like 'S.2%'  
+                    ORDER BY VolgordeJPS DESC, Volgnummer, Saldo, Sector, Transactie
+                     ")
+
+temp_object_9 <- dbGetQuery(connection, temp_query)
+
+
+#  1.22. 'zetdataexcel saldigeteld' ----
+temp_query <- paste0("
+                    SELECT JPS, VolgordeJPS, Jaar, Periode, Status, Sector, Volgnummer, Saldo, Omschrijving, SUM(SaldoWaarde) AS Waarde 
+                    FROM ##tmptbl_Export_Saldi_wtps 
+                    GROUP BY JPS, VolgordeJPS, Jaar, Periode, Status, Sector, Volgnummer, Saldo, Omschrijving 
+                    ORDER BY VolgordeJPS DESC, Sector, Volgnummer
+                     ")
+
+temp_object_10 <- dbGetQuery(connection, temp_query)
+
+
+#  1.23. 'zetdataexcel ExtraData' ----
+temp_query <- paste0("
+                    SELECT j.JPS, j.VolgordeJPS, j.Jaar, j.Periode, j.Status, Sector, Transactie, Waarde 
+                    FROM dbo.tbl_SR_Extra_Data d 
+                    INNER JOIN ##tbl_SR_JPS_wtps j ON d.JPS_Id = j.JPS_Id 
+                    ORDER BY VolgordeJPS DESC, Sector, Transactie
+                     ")
+
+temp_object_11 <- dbGetQuery(connection, temp_query)
+
+
+#  1.24. 'zetdataexcel EMUSchuld' ----
+temp_query <- paste0("
+                    SELECT * FROM ##tbl_SR_Data_Transacties_wtps AS D 
+                    WHERE Sector LIKE 'S.13%' AND TransactieSoort='P' AND Transactie LIKE '%H' 
+                    ORDER BY VolgordeJPS DESC, Sector, Transactie 
+                     ")
+
+temp_object_12 <- dbGetQuery(connection, temp_query)
+
+
+#  1.25. 'zetdataexcel DataTellen2' ----
+temp_query <- paste0("
+                    SELECT D.*, t.Niveau AS NiveauTransactie 
+                    FROM ##tbl_SR_Data_Transacties_wtps AS D 
+                    INNER JOIN ##tbl_SR_TransactieClassificatie_wtps AS t ON D.Transactie = t.Transactie AND D.TransactieSoort = t.TransactieSoort AND D.JPS_Id = t.JPS_Id 
+                    WHERE t.Niveau = 2 AND Waarde <> 0
+                    ORDER BY VolgordeJPS DESC, Sector, Transactie
+                     ")
+
+temp_object_13 <- dbGetQuery(connection, temp_query)
+
+
+#  1.26. 'zetdataexcel jpsen' ----
+temp_query <- paste0("
+                    DECLARE @jpsen AS VARCHAR(MAX)
+                    SELECT @jpsen = COALESCE(@jpsen + ';' ,'') + JPS  FROM ##tbl_SR_JPS_wtps 
+                    ORDER BY VolgordeJPS
+                    SELECT @jpsen
+                     ")
+
+temp_object_14 <- dbGetQuery(connection, temp_query)
