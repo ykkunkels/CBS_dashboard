@@ -1,14 +1,21 @@
 
 ###################################
 ### SQL - Rosetta Stone         ###
-### version 0.0.15              ###
+### version 0.0.16              ###
 ###                             ###
 ### Translating SQL to R        ###
 ### Source: logfile sqltext.sql ###
-### YKK - 20-07-2023            ###
+### YKK - 03-08-2023            ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~###
 
 ## 0. Basic Operations ----
+
+## Set timer start
+rosetta_timer_start <- Sys.time()
+
+## Load and / or Install required packages ----
+if(!require('odbc')){install.packages('odbc', dep = TRUE)};library('odbc')
+
 # Define SQL connection
 connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
 
@@ -822,3 +829,12 @@ temp_query <- paste0("
                      ")
 
 temp_object_14 <- dbGetQuery(connection, temp_query)
+
+
+## 2.0. Post-processing Operations ----
+
+## Set timer end
+rosetta_timer_end <- Sys.time()
+
+rosetta_time_taken <- round(rosetta_timer_end - rosetta_timer_start, 2)
+rosetta_time_taken
