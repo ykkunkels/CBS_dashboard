@@ -1,11 +1,10 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Version 0.0.16           ###
+### Version 0.0.17           ###
 ### #!Debug                  ###
-### YKK - 03-08-2023         ###
+### YKK - 07-08-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
-
 
 #! Connect to SQL Server
 if(!require('DBI')){install.packages('DBI', dep = TRUE)};library('BDI')
@@ -48,58 +47,49 @@ if(any(FALSE %in% (tbl_SR_JPS_wtps$VolgordeJPS == tbl_SR_JPS_wtps_R$VolgordeJPS)
 
 ## Data selection & values check
 
-# read prepared Excel value files
-if(!require('openxlsx')){install.packages('openxlsx', dep = TRUE)};library('openxlsx')
-temp_path <- "//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Ondersteuningsbestanden/LT_M.xlsx"
-eee <- read.xlsx(temp_path, colNames = FALSE)
+temp_index <- c("JPS", "Sector", "Transactie", "TransactieSoort", "Waarde_Type", "Rekening", "Waarde")
+temp_data <- tbl_SR_Data_Transacties_wtps[, temp_index]
 
-temp_path <- "//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Ondersteuningsbestanden/LT_B.xlsx"
-fff <- read.xlsx(temp_path, colNames = FALSE)
+temp_data <- temp_data[(temp_data[, "JPS"] == "2021-Y-D"), ]
+temp_data <- temp_data[(temp_data[, "Waarde_Type"] == "R"), ]
+temp_data <- temp_data[(temp_data[, "Sector"] == "S.11"), ]
+temp_data <- temp_data[(temp_data[, "Rekening"] != "BB"), ]
 
-temp_path <- "//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Ondersteuningsbestanden/EB_A.xlsx"
-ggg <- read.xlsx(temp_path, colNames = FALSE)
+# aggregate
+temp_out <- aggregate(Waarde ~ Rekening + TransactieSoort + Transactie, temp_data, sum)
 
+# order
+temp_out <- temp_out[order(temp_out$Rekening, temp_out$TransactieSoort), ]
 
+# # write df
+# write.csv(temp_out, "df_Excel_compare3.csv")
 
+#---
 
-# Initialise empty df
-# transactie_names <- c("P.11A", "P.12A", "D.41A", "P.119C", "D.421", "D.422", "D.43", 
-#                       "D.441", "D.4431", "D.4432", "D.45", "D.6122", "D.721", "D.75", "D.92", "D.99")
-transactie_names <- eee$X1
-# excel_waardes <- c(1161954, 10817, 14754, -1553, 85351, 129, 9762, 106, 15, 12, 14, 11522, 3884, 3253, 400, 516)
-excel_waardes <- eee$X2
+## Get data more directly from SQL server
 
-df_Excel_compare <- data.frame("Transactie" = transactie_names, "2021-Y-D" = rep(NA, 16), 
-                               "Excel_waardes" = excel_waardes, "Verschil" = rep(NA, 16))
-colnames(df_Excel_compare)[2] <- c("2021-Y-D")
+## Set timer start
+rosetta_timer_start <- Sys.time()
 
-# selecting data
-index_Sector <- tbl_SR_Data_Transacties_wtps$Sector == "S.11"
-aaa <- tbl_SR_Data_Transacties_wtps[index_Sector, ]
+temp_query <- paste0("
+                      SELECT * FROM tbl_SR_Data_Transacties 
+                      WHERE Jaar='2021' AND Periode='Y' AND Status='D' AND
+                      Waarde_Type='R' AND Sector='S.11' AND NOT Rekening='BB'
+                     ")
+tbl_SR_Data_Transacties <- dbGetQuery(verbinding_iSR, temp_query)
 
+temp_index <- c("Sector", "Transactie", "TransactieSoort", "Waarde_Type", "Rekening", "Waarde")
+tbl_SR_Data_Transacties <- tbl_SR_Data_Transacties[, temp_index]
 
-index_LT <- aaa[, "Rekening"] == "LT"
-bbb <- aaa[index_LT, ]
+# aggregate
+temp_out <- aggregate(Waarde ~ Rekening + TransactieSoort + Transactie, tbl_SR_Data_Transacties, sum)
 
+# order
+temp_out <- temp_out[order(temp_out$Rekening, temp_out$TransactieSoort), ]
 
-index_M <- bbb[, "TransactieSoort"] == "M"
-ccc <- bbb[index_M, ]
+## Set timer end
+rosetta_timer_end <- Sys.time()
 
-
-index_JPS <- ccc$JPS == "2021-Y-D"
-ddd <- ccc[index_JPS, ]
-
-# fill df
-for (i in 1:nrow(df_Excel_compare)) {
-  
-  df_Excel_compare$`2021-Y-D`[i] <- sum(ddd[ddd$Transactie == df_Excel_compare$Transactie[i], "Waarde"])
-  
-}
-
-df_Excel_compare$Verschil <- (df_Excel_compare$`2021-Y-D` - df_Excel_compare$Excel_waardes)
-
-
-# write df
-write.csv(df_Excel_compare, "df_Excel_compare.csv")
-
+rosetta_time_taken <- round(rosetta_timer_end - rosetta_timer_start, 2)
+rosetta_time_taken
 
