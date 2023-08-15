@@ -1,10 +1,14 @@
 
-################################
-### TEST Shiny CBS Dashboard ###
-### UI version 0.0.13        ###
-### YKK - 13-07-2023         ###
-### Change log:              ###
-###~*~*~*~*~*~*~*~*~*~*~*~*~*###
+##################################
+### TEST Shiny CBS Dashboard   ###
+### UI version 0.0.18          ###
+### YKK - 15-08-2023           ###
+### Change log:                ###
+###  > Added Sector_R data     ###
+###  > Expanded Sector_R data  ###
+###  > Added Download .csv     ###
+###  > Added decimal points    ###
+###~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
 if(!require('shiny')){install.packages('shiny', dep = TRUE)};library('shiny')
@@ -38,7 +42,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.13", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.18", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -59,23 +63,35 @@ ui <- dashboardPage(skin = "blue",
                                     
                                     tabItem(tabName = "JPS_tab", # JPS tab ----
                                             
-                                            # data JPS: Populate drop-down menu's directly from SQL
-                                            fluidRow(
-                                              column(3, selectInput(inputId = "select_JPS_jaar", label = "Jaar", width = "100px", 
-                                                                    selected = (as.integer(substr(Sys.time(), 1, 4)) - 1),
-                                                                    choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
-                                                                                                     Database = "HSR_ANA_PRD"),
-                                                                                           paste0("SELECT DISTINCT Jaar FROM tbl_SR_JPSReferentie ORDER BY Jaar DESC")))
-                                              )
+                                            fluidPage(
+                                              
+                                              fluidRow(
+                                                
+                                                column(width = 3, style = "margin-top: 0; margin-bottom: 0;", h5(strong("Jaar"))),
+                                                column(width = 3, style = "margin-top: 0; margin-bottom: 0;", h5(strong("Status")))
+                                                
                                               ),
-                                              column(3, selectInput(inputId = "select_JPS_status", label = "Status", width = "100px",
-                                                                    selected = "V", #! make dynamic
-                                                                    choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
-                                                                                                     Database = "HSR_ANA_PRD"),
-                                                                                           paste0("SELECT DISTINCT Status FROM tbl_SR_JPSReferentie ORDER BY Status")))
-                                              )
-                                              )
-                                            ), # closing fluidRow()
+                                              
+                                              # data JPS: Populate drop-down menu's directly from SQL
+                                              fluidRow(
+                                                column(3, selectInput(inputId = "select_JPS_jaar", label = "", width = "100px", 
+                                                                      selected = (as.integer(substr(Sys.time(), 1, 4)) - 2),
+                                                                      choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
+                                                                                                       Database = "HSR_ANA_PRD"),
+                                                                                             paste0("SELECT DISTINCT Jaar FROM tbl_SR_JPSReferentie ORDER BY Jaar DESC")))
+                                                )
+                                                ),
+                                                column(3, selectInput(inputId = "select_JPS_status", label = "", width = "100px",
+                                                                      selected = "R", #! make dynamic
+                                                                      choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
+                                                                                                       Database = "HSR_ANA_PRD"),
+                                                                                             paste0("SELECT DISTINCT Status FROM tbl_SR_JPSReferentie ORDER BY Status")))
+                                                )
+                                                )
+                                              ) # closing fluidRow()
+                                              
+                                            ),
+                                            
                                             
                                             hr(style = "border-top: 1px solid #000000"),
                                             
@@ -91,43 +107,59 @@ ui <- dashboardPage(skin = "blue",
                                               tabPanel("Plausibiliteit_R"),
                                               tabPanel("Sector_R",
                                                        
-                                                       # Sector_R: Populate dropdown menu's directly from SQL 
-                                                       fluidRow(
-                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
-                                                                selectInput(inputId = "select_sector", label = "Sector", width = "100px",
-                                                                            selected = "S.14",
-                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                             Database = "HSR_ANA_PRD"), 
-                                                                                                   paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties ORDER BY Sector")))
-                                                                )
+                                                       fluidPage(
+                                                         
+                                                         # Sector_R: Populate dropdown menu's directly from SQL 
+                                                         fluidRow(
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Sector"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Rekening"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("TransactieSoort"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("JPS"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Download selection as .CSV")))
+                                                           
                                                          ),
                                                          
-                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
-                                                                selectInput(inputId = "select_transactiesoort", label = "Transactiesoort", width = "100px",
-                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                             Database = "HSR_ANA_PRD"), 
-                                                                                                   paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
-                                                                )
-                                                         ),
+                                                         fluidRow(
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                                  selectInput(inputId = "select_sector", label = "", width = "125px",
+                                                                              selected = "S.11",
+                                                                              choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                               Database = "HSR_ANA_PRD"), 
+                                                                                                     paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties ORDER BY Sector")))
+                                                                  )
+                                                           ),
+                                                           
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                                  selectInput(inputId = "select_rekening", label = "", width = "125px",
+                                                                              selected = "LT",
+                                                                              choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                               Database = "HSR_ANA_PRD"), 
+                                                                                                     paste0("SELECT DISTINCT Rekening FROM tbl_SR_Data_Transacties")))
+                                                                  )
+                                                           ),
+                                                           
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                                  selectInput(inputId = "select_transactiesoort", label = "", width = "125px",
+                                                                              selected = "all",
+                                                                              choices = c("all", dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                                                            paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
+                                                                  )
+                                                           ),
+                                                           
+                                                           column(width = 2, style = "margin-top: -5px; margin-bottom: -25px;",
+                                                                  verbatimTextOutput("code_JPS")
+                                                           ),
+                                                           
+                                                           column(width = 2, style = "margin-top: -5px; margin-bottom: -25px;",
+                                                                  downloadButton(outputId = "download_A_Sector_R", label = "Download")
+                                                           )
+                                                         ), # closing fluidRow()
                                                          
-                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
-                                                                selectInput(inputId = "select_waarde_type", label = "Waarde type", width = "100px",
-                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                             Database = "HSR_ANA_PRD"), 
-                                                                                                   paste0("SELECT DISTINCT Waarde_Type FROM tbl_SR_Data_Transacties ORDER BY Waarde_Type")))
-                                                                )
-                                                         ),
+                                                         hr(style = "border-top: 1px solid #000000")
                                                          
-                                                         column(width = 3, style = "margin-top: -15px; margin-bottom: -25px;",
-                                                                selectInput(inputId = "select_rekening", label = "Rekening", width = "100px",
-                                                                            choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
-                                                                                                             Database = "HSR_ANA_PRD"), 
-                                                                                                   paste0("SELECT DISTINCT Rekening FROM tbl_SR_Data_Transacties")))
-                                                                )
-                                                         )
-                                                       ), # closing fluidRow()
+                                                       ), # closing fluidPage()
                                                        
-                                                       hr(style = "border-top: 1px solid #000000"),
                                                        
                                                        # Sector_R: Data
                                                        withSpinner(DTOutput("data_Sector_R"), type = 6)),
@@ -210,7 +242,7 @@ ui <- dashboardPage(skin = "blue",
                                             selectInput(inputId = "plot1_x", label = "x-axis", choices = NULL),
                                             selectInput(inputId = "plot1_y", label = "y-axis", choices = NULL),
                                             
-                                            plotOutput(outputId = "plot1")
+                                            plotOutput(outputId = "plot1", height = "600px")
                                             
                                     ), # closing Visualisations tabItem()
                                     
