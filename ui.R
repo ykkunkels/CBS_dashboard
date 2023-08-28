@@ -1,13 +1,13 @@
 
 ##################################
 ### TEST Shiny CBS Dashboard   ###
-### UI version 0.0.18          ###
-### YKK - 15-08-2023           ###
+### UI version 0.0.19          ###
+### YKK - 28-08-2023           ###
 ### Change log:                ###
-###  > Added Sector_R data     ###
-###  > Expanded Sector_R data  ###
-###  > Added Download .csv     ###
-###  > Added decimal points    ###
+###  >  Reshape fix            ###
+###  >  Selection via JPS      ###
+###  >  Column sorting fixed   ###
+###  >  Added Basic plotting   ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -42,7 +42,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.18", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.19", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -67,26 +67,28 @@ ui <- dashboardPage(skin = "blue",
                                               
                                               fluidRow(
                                                 
-                                                column(width = 3, style = "margin-top: 0; margin-bottom: 0;", h5(strong("Jaar"))),
-                                                column(width = 3, style = "margin-top: 0; margin-bottom: 0;", h5(strong("Status")))
+                                                column(width = 3, style = "margin-top: 0; margin-bottom: -25px;", h5(strong("Jaar"))),
+                                                column(width = 3, style = "margin-top: 0; margin-bottom: -25px;", h5(strong("Status")))
                                                 
                                               ),
                                               
                                               # data JPS: Populate drop-down menu's directly from SQL
                                               fluidRow(
-                                                column(3, selectInput(inputId = "select_JPS_jaar", label = "", width = "100px", 
-                                                                      selected = (as.integer(substr(Sys.time(), 1, 4)) - 2),
-                                                                      choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
-                                                                                                       Database = "HSR_ANA_PRD"),
-                                                                                             paste0("SELECT DISTINCT Jaar FROM tbl_SR_JPSReferentie ORDER BY Jaar DESC")))
-                                                )
+                                                column(3, style = "margin-top: 0; margin-bottom: -25px;", 
+                                                       selectInput(inputId = "select_JPS_jaar", label = "", width = "100px", 
+                                                                   selected = (as.integer(substr(Sys.time(), 1, 4)) - 2),
+                                                                   choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
+                                                                                                    Database = "HSR_ANA_PRD"), 
+                                                                                          paste0("SELECT DISTINCT Jaar FROM tbl_SR_JPSReferentie ORDER BY Jaar DESC")))
+                                                       )
                                                 ),
-                                                column(3, selectInput(inputId = "select_JPS_status", label = "", width = "100px",
-                                                                      selected = "R", #! make dynamic
-                                                                      choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001",
-                                                                                                       Database = "HSR_ANA_PRD"),
-                                                                                             paste0("SELECT DISTINCT Status FROM tbl_SR_JPSReferentie ORDER BY Status")))
-                                                )
+                                                column(3, style = "margin-top: 0; margin-bottom: -25px;", 
+                                                       selectInput(inputId = "select_JPS_status", label = "", width = "100px",
+                                                                   selected = "R", #! make dynamic
+                                                                   choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                    Database = "HSR_ANA_PRD"), 
+                                                                                          paste0("SELECT DISTINCT Status FROM tbl_SR_JPSReferentie ORDER BY Status")))
+                                                       )
                                                 )
                                               ) # closing fluidRow()
                                               
@@ -237,10 +239,15 @@ ui <- dashboardPage(skin = "blue",
                                     
                                     tabItem(tabName = "visualisations_tab", # Visualisations tab ----
                                             
-                                            h5("Welcome! Soon visualisation functionality will be placed here"),
+                                            fluidRow(
+                                              column(width = 6, h5(strong("Welcome! Here data can be plotted using the dropdown menu"))),
+                                              column(width = 6, h5(strong("Download plot via download button below")))
+                                            ),
                                             
-                                            selectInput(inputId = "plot1_x", label = "x-axis", choices = NULL),
-                                            selectInput(inputId = "plot1_y", label = "y-axis", choices = NULL),
+                                            fluidRow(
+                                              column(width = 6, selectInput(inputId = "plot1_y", label = "y-axis", choices = NULL)),
+                                              column(width = 6, br(), downloadButton(outputId = "download_plot1", label = "Download"))
+                                            ),
                                             
                                             plotOutput(outputId = "plot1", height = "600px")
                                             
