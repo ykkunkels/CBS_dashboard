@@ -1,22 +1,24 @@
 
 ##################################
 ### TEST Shiny CBS Dashboard   ###
-### UI version 0.0.19          ###
-### YKK - 28-08-2023           ###
+### UI version 0.0.20          ###
+### YKK - 05-09-2023           ###
 ### Change log:                ###
-###  >  Reshape fix            ###
-###  >  Selection via JPS      ###
-###  >  Column sorting fixed   ###
-###  >  Added Basic plotting   ###
+###  > Added onderdeel         ###
+###  > added multiple dropdown ###
+###  > Improved plotting       ###
+###  > NA's and zero's changed ###
+###  > c() onderdeel 05 & 10   ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
 if(!require('shiny')){install.packages('shiny', dep = TRUE)};library('shiny')
 if(!require('shinydashboard')){install.packages('shinydashboard', dep = TRUE)};library('shinydashboard')
 if(!require('shinyjs')){install.packages('shinyjs', dep = TRUE)};library('shinyjs')
+if(!require('shinycssloaders')){install.packages('shinycssloaders', dep = TRUE)};library('shinycssloaders')
 if(!require('odbc')){install.packages('odbc', dep = TRUE)};library('odbc')
 if(!require('DT')){install.packages('DT', dep = TRUE)};library('DT')
-if(!require('shinycssloaders')){install.packages('shinycssloaders', dep = TRUE)};library('shinycssloaders')
+if(!require('dplyr')){install.packages('dplyr', dep = TRUE)};library('dplyr')
 
 ## UI ----
 # Define UI for application that draws a histogram
@@ -42,7 +44,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.19", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.20", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -59,7 +61,7 @@ ui <- dashboardPage(skin = "blue",
                                                 h1("CBS Dashboard in R Shiny", align = "center")
                                             )
                                             
-                                    ), # closing B tabItem()
+                                    ), # closing welkom tabItem()
                                     
                                     tabItem(tabName = "JPS_tab", # JPS tab ----
                                             
@@ -116,8 +118,10 @@ ui <- dashboardPage(skin = "blue",
                                                            column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Sector"))),
                                                            column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Rekening"))),
                                                            column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("TransactieSoort"))),
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("JPS"))),
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Download selection as .CSV")))
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Onderdeel"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Weergave Tabel"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("JPS"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Download .CSV")))
                                                            
                                                          ),
                                                          
@@ -142,18 +146,33 @@ ui <- dashboardPage(skin = "blue",
                                                            
                                                            column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_transactiesoort", label = "", width = "125px",
-                                                                              selected = "all",
+                                                                              selected = "B", multiple = TRUE,
                                                                               choices = c("all", dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
                                                                                                                       Database = "HSR_ANA_PRD"), 
                                                                                                             paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
                                                                   )
                                                            ),
                                                            
-                                                           column(width = 2, style = "margin-top: -5px; margin-bottom: -25px;",
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                                  selectInput(inputId = "select_onderdeel", label = "", width = "125px",
+                                                                              selected = c("05", "10"), multiple = TRUE,
+                                                                              choices = c("all", dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                                      Database = "HSR_ANA_PRD"), 
+                                                                                                            paste0("SELECT DISTINCT Onderdeel FROM tbl_SR_Data_Transacties ORDER BY Onderdeel")))
+                                                                  )
+                                                           ),
+                                                           
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                                  selectInput(inputId = "select_A_tabel", label = "", width = "125px",
+                                                                              selected = "standaard",
+                                                                              choices = c("standaard", "Bijstelling", "Q-1/Y-1", "Q-4/Y-1"))
+                                                           ),
+                                                           
+                                                           column(width = 1, style = "margin-top: -5px; margin-bottom: -25px;",
                                                                   verbatimTextOutput("code_JPS")
                                                            ),
                                                            
-                                                           column(width = 2, style = "margin-top: -5px; margin-bottom: -25px;",
+                                                           column(width = 1, style = "margin-top: -5px; margin-bottom: -25px;",
                                                                   downloadButton(outputId = "download_A_Sector_R", label = "Download")
                                                            )
                                                          ), # closing fluidRow()
@@ -240,13 +259,15 @@ ui <- dashboardPage(skin = "blue",
                                     tabItem(tabName = "visualisations_tab", # Visualisations tab ----
                                             
                                             fluidRow(
-                                              column(width = 6, h5(strong("Welcome! Here data can be plotted using the dropdown menu"))),
-                                              column(width = 6, h5(strong("Download plot via download button below")))
+                                              column(width = 4, h5(strong("Welcome! Here data can be plotted using the dropdown menu"))),
+                                              column(width = 4, h5(strong("Drop year means"))),
+                                              column(width = 4, h5(strong("Download plot via download button below")))
                                             ),
                                             
                                             fluidRow(
-                                              column(width = 6, selectInput(inputId = "plot1_y", label = "y-axis", choices = NULL)),
-                                              column(width = 6, br(), downloadButton(outputId = "download_plot1", label = "Download"))
+                                              column(width = 4, selectInput(inputId = "plot1_y", label = "y-axis", choices = NULL)),
+                                              column(width = 4, checkboxInput(inputId = "drop_year_means", label = "drop")),
+                                              column(width = 4, br(), downloadButton(outputId = "download_plot1", label = "Download"))
                                             ),
                                             
                                             plotOutput(outputId = "plot1", height = "600px")

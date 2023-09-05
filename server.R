@@ -1,16 +1,17 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.19    ###
-### YKK - 28-08-2023         ###
+### Server version 0.0.20    ###
+### YKK - 05-09-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
   
   ## 0. Basic Operations ----
   # Define & initialise reactiveValues objects
-  SQL_input <- reactiveValues(connection = NA, query = NA, query_JPS = NA)
+  SQL_input <- reactiveValues(connection = NA, query = NA, query_JPS = NA, select_transactiesoort = NA, select_onderdeel = NA, ncols = NA)
   SQL_output <- reactiveValues(data_JPS = NA, code_JPS = NA, data_Sector_R = NA, data_aggregated_Sector_R = NA)
+  plot_parameters <- reactiveValues(temp_drop = 0, labels = NA)
   
   # Define SQL connection
   SQL_input$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
@@ -57,30 +58,21 @@ server <- function(input, output, session) {
   # Query Sector_R data
   data_Sector_R <- reactive({
     
-    # Exception for showing data from all or specific TransactieSoorten
-    if(input$select_transactiesoort == "all"){
-      
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Waarde_Type, Rekening, Waarde
-                               FROM tbl_SR_Data_Transacties 
-                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
-                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"')")
-      
-    }else{
-      
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Waarde_Type, Rekening, Waarde
+    SQL_input$select_transactiesoort <- paste(input$select_transactiesoort, collapse = "', '" )
+    SQL_input$select_onderdeel <- paste(input$select_onderdeel, collapse = "', '" )
+    
+    SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
                                FROM tbl_SR_Data_Transacties 
                                WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
                                AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"') AND
-                               TransactieSoort=('",input$select_transactiesoort,"')")
-      
-    }
+                               TransactieSoort IN ('",SQL_input$select_transactiesoort,"') AND Onderdeel IN ('",SQL_input$select_onderdeel,"')")
     
     SQL_output$data_Sector_R <- dbGetQuery(SQL_input$connection, SQL_input$query)
     
   })
   
   
-  # Render Sector_R data
+  # Render Sector_R standaard data
   output$data_Sector_R <- renderDT({
     
     data_Sector_R()
@@ -93,16 +85,14 @@ server <- function(input, output, session) {
                                              SQL_output$data_Sector_R$Status)
       
       # Aggregate data to sum over values
-      SQL_output$data_aggregated_Sector_R <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie, SQL_output$data_Sector_R, sum)
-      
+      SQL_output$data_aggregated_Sector_R <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie + Onderdeel, SQL_output$data_Sector_R, sum)
       
       # Select only required JPSen
       required_JPS <- as.character(unlist(SQL_output$data_Sector_R_JPS[c(2:5, 1), c(2, 1, 3)]))
       SQL_output$data_aggregated_Sector_R <- SQL_output$data_aggregated_Sector_R[SQL_output$data_aggregated_Sector_R$JPS %in% required_JPS, ]
       
-      
       # Reshape data from long to wide    
-      SQL_output$data_reshaped_Sector_R <- reshape(SQL_output$data_aggregated_Sector_R, direction = 'wide', idvar = c("Transactie", "TransactieSoort"), timevar = "JPS")
+      SQL_output$data_reshaped_Sector_R <- reshape(SQL_output$data_aggregated_Sector_R, direction = 'wide', idvar = c("Transactie", "TransactieSoort", "Onderdeel"), timevar = "JPS")
       
       # Drop unnecessary columns
       drop <- grep(c("Rekening."), colnames(SQL_output$data_reshaped_Sector_R))
@@ -111,10 +101,37 @@ server <- function(input, output, session) {
       # Rename colnames
       colnames(SQL_output$data_reshaped_Sector_R) <- gsub("Waarde.", "", colnames(SQL_output$data_reshaped_Sector_R))
       
+      # Initialise variables to sort columns
+      SQL_input$ncols <- ncol(SQL_output$data_reshaped_Sector_R)
+      temp_nchar <- max(nchar(colnames(SQL_output$data_reshaped_Sector_R)[4:SQL_input$ncols]))
+      
       # Sort columns
-      temp_nchar <- max(nchar(colnames(SQL_output$data_reshaped_Sector_R)[3:17]))
-      SQL_output$data_reshaped_Sector_R <- SQL_output$data_reshaped_Sector_R[c(1, 2, order(substr(colnames(SQL_output$data_reshaped_Sector_R[3:17]), 1, 4),
-                                                                                           substr(colnames(SQL_output$data_reshaped_Sector_R[3:17]), 8, temp_nchar)) + 2)]
+      SQL_output$data_reshaped_Sector_R <- SQL_output$data_reshaped_Sector_R[c(1:3, order(substr(colnames(SQL_output$data_reshaped_Sector_R[4:SQL_input$ncols]), 1, 4), 
+                                                                                          substr(colnames(SQL_output$data_reshaped_Sector_R[4:SQL_input$ncols]), 8, temp_nchar)) + 3)]
+      
+      # Exception for when "Onderdeel" is both "05" and "10"; combine to fill rows
+      if(all(SQL_input$select_onderdeel == "05', '10" & (c(5, 10) %in% as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"]))) | 
+         all(SQL_input$select_onderdeel == "10', '05" & (c(5, 10) %in% as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"])))){
+        
+        temp_select_data_05 <- (as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"]) == 5)
+        temp_select_data_10 <- (as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"]) == 10)
+        
+        temp_data_05 <- SQL_output$data_reshaped_Sector_R[temp_select_data_05, ]
+        temp_data_10 <- SQL_output$data_reshaped_Sector_R[temp_select_data_10, ]
+        
+        temp_drop <- c(setdiff(temp_data_05$Transactie, temp_data_10$Transactie), setdiff(temp_data_10$Transactie, temp_data_05$Transactie))
+        
+        temp_data_05 <- temp_data_05[(temp_data_05[, "Transactie"] != temp_drop), ]
+        temp_data_10 <- temp_data_10[(temp_data_10[, "Transactie"] != temp_drop), ]
+        
+        SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "Transactie")
+        
+        SQL_output$data_reshaped_Sector_R[, "Onderdeel"] <- "05 + 10"
+        
+      }
+      
+      # # Create "Bijstelling" table !!!WIP!!!!
+      # SQL_output$data_reshaped_Sector_R[, 3:7] - SQL_output$data_reshaped_Sector_R[, 8:12]
       
       
       # Add decimal points (#! check if this doesn't introduce bugs)
@@ -122,7 +139,12 @@ server <- function(input, output, session) {
         SQL_output$data_reshaped_Sector_R[, i] <- prettyNum(as.vector(SQL_output$data_reshaped_Sector_R[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
       }
       
+      # Set "NA" and zero's to whitespace
+      SQL_output$data_reshaped_Sector_R[SQL_output$data_reshaped_Sector_R == "NA" | SQL_output$data_reshaped_Sector_R == 0] <- ""
+      
+      # Finalise dataset
       SQL_output$data_final_Sector_R <- SQL_output$data_reshaped_Sector_R
+      
       
     }) # closing isolate()
     
@@ -136,7 +158,7 @@ server <- function(input, output, session) {
                                "$(this.api().table().header()).css({'color': 'steelblue'});",
                                "}")
               ))
-  })
+  }) # closing renderDT({})
   
   
   ## 2. Initialise UI elements ----
@@ -164,22 +186,38 @@ server <- function(input, output, session) {
     updateSelectInput(session = session, inputId = "plot1_y", choices = SQL_output$data_reshaped_Sector_R[, "Transactie"])
   })
   
-  # Render plot
-  output$plot1 <- renderPlot({
+  # Initialise plot
+  plot1 <- reactive({
     
-    plot_y_data <- as.numeric(SQL_output$data_reshaped_Sector_R[which(SQL_output$data_reshaped_Sector_R[ , "Transactie"] == input$plot1_y), 3:17])
-    
+    # Get y-axis data, get y-axis n, set color, and set labels
+    plot_y_data <- as.numeric(SQL_output$data_reshaped_Sector_R[which(SQL_output$data_reshaped_Sector_R[ , "Transactie"] == input$plot1_y), 4:SQL_input$ncols])
+    n_yaxis <- length(plot_y_data)
     if(any(plot_y_data >= 0)){temp_col <- "steelblue"} else{temp_col <- "red"}
+    plot_parameters$labels <- colnames(SQL_output$data_reshaped_Sector_R)[4:(n_yaxis + 3)]
     
-    plot(x = 1:15, y = plot_y_data, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
+    # Exception for dropping year means
+    if(input$drop_year_means == TRUE){
+      plot_parameters$temp_drop <- which(substr(colnames(SQL_output$data_reshaped_Sector_R)[4:SQL_input$ncols], 5, 7) == "-Y-")
+      plot_y_data <- plot_y_data[-plot_parameters$temp_drop]
+      plot_parameters$labels <- colnames(SQL_output$data_reshaped_Sector_R)[4:(n_yaxis + 3)][-plot_parameters$temp_drop]
+      n_yaxis <- length(plot_y_data)
+    }
+    
+    # Plotting and axis customisation 
+    plot(x = 1:n_yaxis, y = plot_y_data, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
          main = paste("Waarde van Transactie", input$plot1_y), col = temp_col)
-    axis(side = 1, at = 1:15, labels = colnames(SQL_output$data_reshaped_Sector_R)[3:17])
+    axis(side = 1, at = 1:n_yaxis, labels = plot_parameters$labels)
+    
+    # Record plot for downloadHandler()
+    recordPlot()
     
   })
   
+  # Render plot
+  output$plot1 <- renderPlot({replayPlot(req(plot1()))})
+  
   
   ## 4. Miscellaneous ----
-  
   # Download handlers
   # Actionbutton: download A.Sector_R as .CSV
   output$download_A_Sector_R <- downloadHandler(
@@ -197,12 +235,8 @@ server <- function(input, output, session) {
       paste0("plot1_", input$plot1_y, ".jpeg", sep = "")
     },
     content = function(file) {
-      jpeg(file)
-      plot_y_data <- as.numeric(SQL_output$data_reshaped_Sector_R[which(SQL_output$data_reshaped_Sector_R[ , "Transactie"] == input$plot1_y), 3:17])
-      if(any(plot_y_data >= 0)){temp_col <- "steelblue"} else{temp_col <- "red"}
-      plot(x = 1:15, y = plot_y_data, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
-           main = paste("Waarde van Transactie", input$plot1_y), col = temp_col)
-      axis(side = 1, at = 1:15, labels = colnames(SQL_output$data_reshaped_Sector_R)[3:17])
+      jpeg(file, width = 1920, height = 540)
+      replayPlot(plot1())
       dev.off()
     }
   )
