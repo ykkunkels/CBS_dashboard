@@ -1,14 +1,13 @@
 
 ##################################
 ### TEST Shiny CBS Dashboard   ###
-### UI version 0.0.20          ###
-### YKK - 05-09-2023           ###
+### UI version 0.0.21          ###
+### YKK - 18-09-2023           ###
 ### Change log:                ###
-###  > Added onderdeel         ###
-###  > added multiple dropdown ###
-###  > Improved plotting       ###
-###  > NA's and zero's changed ###
-###  > c() onderdeel 05 & 10   ###
+###  > Added error modals      ###
+###  > Set language to Dutch   ###
+###  > Fixed seperator         ###
+###  > Bijstelling preperation ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -19,6 +18,7 @@ if(!require('shinycssloaders')){install.packages('shinycssloaders', dep = TRUE)}
 if(!require('odbc')){install.packages('odbc', dep = TRUE)};library('odbc')
 if(!require('DT')){install.packages('DT', dep = TRUE)};library('DT')
 if(!require('dplyr')){install.packages('dplyr', dep = TRUE)};library('dplyr')
+if(!require('svDialogs')){install.packages('svDialogs', dep = TRUE)};library('svDialogs')
 
 ## UI ----
 # Define UI for application that draws a histogram
@@ -40,11 +40,12 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Details", tabName = "X_tab", icon = icon("x")),
                                                  menuItem("Overige tabbladen", tabName = "overige_tab", icon = icon("clipboard-question")),
                                                  
-                                                 menuItem("Visualisations", tabName = "visualisations_tab", icon = icon("chart-line")),
-                                                 menuItem("Settings", tabName = "settings_tab", icon = icon("cog")),
+                                                 menuItem("Visualisaties", tabName = "visualisaties_tab", icon = icon("chart-line")),
+                                                 menuItem("Geef feedback", tabName = "feedback_tab", icon = icon("comment")),
+                                                 menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.20", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.21", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -164,8 +165,8 @@ ui <- dashboardPage(skin = "blue",
                                                            
                                                            column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_A_tabel", label = "", width = "125px",
-                                                                              selected = "standaard",
-                                                                              choices = c("standaard", "Bijstelling", "Q-1/Y-1", "Q-4/Y-1"))
+                                                                              selected = "Standaard",
+                                                                              choices = c("Standaard", "Bijstelling", "Q-1/Y-1", "Q-4/Y-1"))
                                                            ),
                                                            
                                                            column(width = 1, style = "margin-top: -5px; margin-bottom: -25px;",
@@ -184,6 +185,7 @@ ui <- dashboardPage(skin = "blue",
                                                        
                                                        # Sector_R: Data
                                                        withSpinner(DTOutput("data_Sector_R"), type = 6)),
+                                              
                                               
                                               tabPanel("Sector_B"),
                                               tabPanel("Saldi_Sector"),
@@ -256,7 +258,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing overige tabItem()
                                     
-                                    tabItem(tabName = "visualisations_tab", # Visualisations tab ----
+                                    tabItem(tabName = "visualisaties_tab", # visualisaties tab ----
                                             
                                             fluidRow(
                                               column(width = 4, h5(strong("Welcome! Here data can be plotted using the dropdown menu"))),
@@ -272,9 +274,24 @@ ui <- dashboardPage(skin = "blue",
                                             
                                             plotOutput(outputId = "plot1", height = "600px")
                                             
-                                    ), # closing Visualisations tabItem()
+                                    ), # closing visualisaties tabItem()
                                     
-                                    tabItem(tabName = "settings_tab", # Settings tab ----
+                                    tabItem(tabName = "feedback_tab", # feedback tab ----
+                                            
+                                            h4("Hieronder kunt u uw feedback over dit CBS dashboard achterlaten"),
+                                            br(),
+                                            textInput("feedback_naam", "Naam (niet verplicht)", width = "800px"),
+                                            textAreaInput("feedback_main", "Feedback", width = "800px"),
+                                            textAreaInput("feedback_missing", "Dit mis ik nog (niet verplicht)", width = "800px"),
+                                            textAreaInput("feedback_errors", "Dit werkt nog niet (niet verplicht)", width = "800px"),
+                                            textAreaInput("feedback_good", "Dit vind ik goed (niet verplicht)", width = "800px"),
+                                            textAreaInput("feedback_value", "Ik geef het huidige dashboard een (cijfer tussen 1 en 10) (niet verplicht)", width = "800px"),
+                                            actionButton("feedback_reset", "Reset"),
+                                            actionButton('feedback_send', 'Verzenden')
+                                            
+                                    ), # closing feedback tabItem()
+                                    
+                                    tabItem(tabName = "instellingen_tab", # Instellingen tab ----
                                             
                                             ## Role selection ----
                                             hr(style = "border-top: 1px solid #000000"),
@@ -290,7 +307,7 @@ ui <- dashboardPage(skin = "blue",
                                                            "R expert" = "R expert",
                                                            "Custom (Advanced)" = "Custom")
                                             )
-                                    ) # closing Settings tabItem()
+                                    ) # closing Instellingen tabItem()
                                     
                                   ) # closing tabItems()
                                   

@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.20    ###
-### YKK - 05-09-2023         ###
+### Server version 0.0.21    ###
+### YKK - 18-09-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -10,7 +10,7 @@ server <- function(input, output, session) {
   ## 0. Basic Operations ----
   # Define & initialise reactiveValues objects
   SQL_input <- reactiveValues(connection = NA, query = NA, query_JPS = NA, select_transactiesoort = NA, select_onderdeel = NA, ncols = NA)
-  SQL_output <- reactiveValues(data_JPS = NA, code_JPS = NA, data_Sector_R = NA, data_aggregated_Sector_R = NA)
+  SQL_output <- reactiveValues(data_JPS = NA, code_JPS = NA, data_Sector_R_JPS = NA, data_Sector_R = NA, data_aggregated_Sector_R = NA)
   plot_parameters <- reactiveValues(temp_drop = 0, labels = NA)
   
   # Define SQL connection
@@ -79,6 +79,14 @@ server <- function(input, output, session) {
     
     isolate({
       
+      # Check to see if user selected JPS before trying to view data Sector_R
+      if(any(is.na(SQL_output$data_Sector_R_JPS)) & is.null(SQL_output$data_Sector_R$JPS)){
+        showModal(modalDialog(title = "Er is nog géén JPS geselecteerd!", 
+                              HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
+                              "Selecteer eerst een JPS", footer = tagList(actionButton(inputId = "goto_JPS", label = "Ga naar JPS'en"))))
+      } 
+      
+      
       # Add JPS variable
       SQL_output$data_Sector_R$JPS <- paste0(SQL_output$data_Sector_R$Jaar, "-",
                                              SQL_output$data_Sector_R$Periode, "-",
@@ -130,10 +138,6 @@ server <- function(input, output, session) {
         
       }
       
-      # # Create "Bijstelling" table !!!WIP!!!!
-      # SQL_output$data_reshaped_Sector_R[, 3:7] - SQL_output$data_reshaped_Sector_R[, 8:12]
-      
-      
       # Add decimal points (#! check if this doesn't introduce bugs)
       for(i in 3:(ncol(SQL_output$data_reshaped_Sector_R))){
         SQL_output$data_reshaped_Sector_R[, i] <- prettyNum(as.vector(SQL_output$data_reshaped_Sector_R[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
@@ -148,16 +152,36 @@ server <- function(input, output, session) {
       
     }) # closing isolate()
     
-    # Take data as datatable
-    datatable(SQL_output$data_final_Sector_R, rownames = NULL,
-              caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-              options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100, 500), 
-                             initComplete = JS( #change colnames fontsize
-                               "function(settings, json) {",
-                               "$(this.api().table().header()).css({'font-size': '85%'});",
-                               "$(this.api().table().header()).css({'color': 'steelblue'});",
-                               "}")
-              ))
+    
+    if(input$select_A_tabel == "Standaard"){
+      
+      # Take data as datatable
+      datatable(SQL_output$data_final_Sector_R, rownames = NULL,
+                caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
+                options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100, 500), 
+                               initComplete = JS( #change colnames fontsize
+                                 "function(settings, json) {",
+                                 "$(this.api().table().header()).css({'font-size': '85%'});",
+                                 "$(this.api().table().header()).css({'color': 'steelblue'});",
+                                 "}")
+                ))
+      
+    }else if(input$select_A_tabel == "Bijstelling"){
+      
+      datatable(matrix(c(1,1)))
+      
+    }else if(input$select_A_tabel == "Q-1/Y-1"){
+      
+      datatable(matrix(c(2,2)))
+      
+    }else if(input$select_A_tabel == "Q-4/Y-1"){
+      
+      datatable(matrix(c(3,3)))
+      
+    }
+    
+    
+    
   }) # closing renderDT({})
   
   
@@ -189,6 +213,17 @@ server <- function(input, output, session) {
   # Initialise plot
   plot1 <- reactive({
     
+    # browser()
+    
+    # Check to see if user selected JPS before trying to plot
+    if(is.na(SQL_input$ncols)){
+      showModal(modalDialog(title = "Er is nog géén JPS en/of data geselecteerd!", 
+                            HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
+                            "Selecteer eerst een JPS en/of data", 
+                            footer = tagList(actionButton(inputId = "goto_JPS", label = "Ga naar JPS'en"),
+                                             actionButton(inputId = "goto_Sectoranalyse", label = "Ga naar Sector R data"))))
+    } 
+    
     # Get y-axis data, get y-axis n, set color, and set labels
     plot_y_data <- as.numeric(SQL_output$data_reshaped_Sector_R[which(SQL_output$data_reshaped_Sector_R[ , "Transactie"] == input$plot1_y), 4:SQL_input$ncols])
     n_yaxis <- length(plot_y_data)
@@ -202,6 +237,7 @@ server <- function(input, output, session) {
       plot_parameters$labels <- colnames(SQL_output$data_reshaped_Sector_R)[4:(n_yaxis + 3)][-plot_parameters$temp_drop]
       n_yaxis <- length(plot_y_data)
     }
+    
     
     # Plotting and axis customisation 
     plot(x = 1:n_yaxis, y = plot_y_data, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
@@ -225,7 +261,7 @@ server <- function(input, output, session) {
       paste0("A_Sector_R_", input$select_sector, "_", input$select_rekening, ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(SQL_output$data_final_Sector_R, file, row.names = FALSE)
+      write.table(SQL_output$data_final_Sector_R, file, row.names = FALSE, sep = ";")
     }
   )
   
@@ -240,5 +276,57 @@ server <- function(input, output, session) {
       dev.off()
     }
   )
+  
+  # Jump to JPS tab when goto_JPS button is clicked
+  observeEvent(input$goto_JPS, {
+    updateTabItems(session, "sidebarmenu", "JPS_tab")
+    removeModal()
+  })
+  
+  # Jump to JPS tab when goto_JPS button is clicked
+  observeEvent(input$goto_Sectoranalyse, {
+    updateTabItems(session, "sidebarmenu", "A_tab")
+    removeModal()
+  })
+  
+  # Feedback Handler
+  # Observe reset button
+  observeEvent(input$feedback_reset, {
+    updateTextInput(session, "feedback_naam", value="")
+    updateTextInput(session, "feedback_main", value="")
+    updateTextInput(session, "feedback_missing", value="")
+    updateTextInput(session, "feedback_errors", value="")
+    updateTextInput(session, "feedback_good", value="")
+    updateTextInput(session, "feedback_value", value="")
+  })
+  
+  # Observe send button
+  observeEvent(input$feedback_send, {
+    
+    # Check if feedback is filled in, then append to existing .CSV file
+    if(input$feedback_main == ""){
+      showModal(modalDialog(title = "Voer eerst uw feedback in", 
+                            HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
+                            "voordat u op verzenden drukt.", footer = modalButton("Ok")))
+    }
+    
+    # Set file location
+    feedback_file_location <- "//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Feedback/feedback.csv"
+    
+    # Load previous feedback
+    feedback_file <- read.table(feedback_file_location, sep = ";", header = TRUE)
+    
+    # Inputs data.frame
+    inputs_data_frame <- data.frame(Naam = input$feedback_naam, Feedback = input$feedback_main, Missing = input$feedback_missing,
+                                    Errors = input$feedback_errors, Good = input$feedback_good, Value = input$feedback_value)
+    
+    # Save Inputs
+    write.table(inputs_data_frame, file = feedback_file_location, row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE)
+    
+    showModal(modalDialog(title = "Bedankt voor uw feedback!", 
+                          icon("face-smile-beam"),
+                          "Wij gaan hiermee aan de slag.", footer = modalButton("Ok")))     
+    
+  }) 
   
 } # closing server{}
