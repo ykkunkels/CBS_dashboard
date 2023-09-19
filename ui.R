@@ -1,14 +1,12 @@
 
-##################################
-### TEST Shiny CBS Dashboard   ###
-### UI version 0.0.21          ###
-### YKK - 18-09-2023           ###
-### Change log:                ###
-###  > Added error modals      ###
-###  > Set language to Dutch   ###
-###  > Fixed seperator         ###
-###  > Bijstelling preperation ###
-###~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
+########################################
+### TEST Shiny CBS Dashboard         ###
+### UI version 0.0.22                ###
+### YKK - 19-09-2023                 ###
+### Change log:                      ###
+###  >  feedback development         ###
+###  >  Initial Bijstelling tables   ###
+###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
 if(!require('shiny')){install.packages('shiny', dep = TRUE)};library('shiny')
@@ -45,7 +43,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.21", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.22", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -116,18 +114,19 @@ ui <- dashboardPage(skin = "blue",
                                                          
                                                          # Sector_R: Populate dropdown menu's directly from SQL 
                                                          fluidRow(
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Sector"))),
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Rekening"))),
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("TransactieSoort"))),
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Onderdeel"))),
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Weergave Tabel"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Sector"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Rekening"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("TransactieSoort"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Onderdeel"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Weergave Tabel"))),
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Absoluut / procentueel"))),
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("JPS"))),
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Download .CSV")))
                                                            
                                                          ),
                                                          
                                                          fluidRow(
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_sector", label = "", width = "125px",
                                                                               selected = "S.11",
                                                                               choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
@@ -136,7 +135,7 @@ ui <- dashboardPage(skin = "blue",
                                                                   )
                                                            ),
                                                            
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_rekening", label = "", width = "125px",
                                                                               selected = "LT",
                                                                               choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
@@ -145,7 +144,7 @@ ui <- dashboardPage(skin = "blue",
                                                                   )
                                                            ),
                                                            
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_transactiesoort", label = "", width = "125px",
                                                                               selected = "B", multiple = TRUE,
                                                                               choices = c("all", dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
@@ -154,7 +153,7 @@ ui <- dashboardPage(skin = "blue",
                                                                   )
                                                            ),
                                                            
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_onderdeel", label = "", width = "125px",
                                                                               selected = c("05", "10"), multiple = TRUE,
                                                                               choices = c("all", dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
@@ -163,10 +162,16 @@ ui <- dashboardPage(skin = "blue",
                                                                   )
                                                            ),
                                                            
-                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_A_tabel", label = "", width = "125px",
                                                                               selected = "Standaard",
                                                                               choices = c("Standaard", "Bijstelling", "Q-1/Y-1", "Q-4/Y-1"))
+                                                           ),
+                                                           
+                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                                  selectInput(inputId = "select_absoluut", label = "", width = "125px",
+                                                                              selected = "Absoluut",
+                                                                              choices = c("Absoluut", "Procentueel"))
                                                            ),
                                                            
                                                            column(width = 1, style = "margin-top: -5px; margin-bottom: -25px;",

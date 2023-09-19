@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.21    ###
-### YKK - 18-09-2023         ###
+### Server version 0.0.22    ###
+### YKK - 19-09-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -10,7 +10,8 @@ server <- function(input, output, session) {
   ## 0. Basic Operations ----
   # Define & initialise reactiveValues objects
   SQL_input <- reactiveValues(connection = NA, query = NA, query_JPS = NA, select_transactiesoort = NA, select_onderdeel = NA, ncols = NA)
-  SQL_output <- reactiveValues(data_JPS = NA, code_JPS = NA, data_Sector_R_JPS = NA, data_Sector_R = NA, data_aggregated_Sector_R = NA)
+  SQL_output <- reactiveValues(data_JPS = NA, code_JPS = NA, data_Sector_R_JPS = NA, data_Sector_R = NA, data_aggregated_Sector_R = NA, 
+                               data_final_Sector_R = NA, data_Sector_R_bijstelling = NA)
   plot_parameters <- reactiveValues(temp_drop = 0, labels = NA)
   
   # Define SQL connection
@@ -138,6 +139,27 @@ server <- function(input, output, session) {
         
       }
       
+      # Create dataset "bijstelling_absoluut"
+      temp_JPS_location_last_1 <- which(colnames(SQL_output$data_reshaped_Sector_R) == SQL_output$code_JPS)
+      temp_JPS_location_first_1 <- (temp_JPS_location_last_1 - 4)
+      
+      temp_bijstelling_1 <- SQL_output$data_reshaped_Sector_R[, (temp_JPS_location_first_1:temp_JPS_location_last_1)]
+      
+      temp_JPS_location_last_2 <- which(colnames(SQL_output$data_reshaped_Sector_R) == SQL_output$data_Sector_R_JPS[1, 2])
+      temp_JPS_location_first_2 <- (temp_JPS_location_last_2 - 4)
+      
+      temp_bijstelling_2 <- SQL_output$data_reshaped_Sector_R[, (temp_JPS_location_first_2:temp_JPS_location_last_2)]
+      
+      SQL_output$data_Sector_R_bijstelling_absoluut <- (temp_bijstelling_1 - temp_bijstelling_2)
+      
+      SQL_output$data_Sector_R_bijstelling_absoluut <- cbind(SQL_output$data_reshaped_Sector_R[, 1:3], SQL_output$data_Sector_R_bijstelling_absoluut )
+      
+      
+      # Create dataset "bijstelling_procentueel"
+      SQL_output$data_Sector_R_bijstelling_procentueel <- round(((temp_bijstelling_1 / (temp_bijstelling_1 + temp_bijstelling_2)) * 100), 2)
+      SQL_output$data_Sector_R_bijstelling_procentueel <- cbind(SQL_output$data_reshaped_Sector_R[, 1:3], SQL_output$data_Sector_R_bijstelling_procentueel )
+      
+      
       # Add decimal points (#! check if this doesn't introduce bugs)
       for(i in 3:(ncol(SQL_output$data_reshaped_Sector_R))){
         SQL_output$data_reshaped_Sector_R[, i] <- prettyNum(as.vector(SQL_output$data_reshaped_Sector_R[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
@@ -146,41 +168,36 @@ server <- function(input, output, session) {
       # Set "NA" and zero's to whitespace
       SQL_output$data_reshaped_Sector_R[SQL_output$data_reshaped_Sector_R == "NA" | SQL_output$data_reshaped_Sector_R == 0] <- ""
       
-      # Finalise dataset
+      # Finalise dataset "Standaard"
       SQL_output$data_final_Sector_R <- SQL_output$data_reshaped_Sector_R
+      
       
       
     }) # closing isolate()
     
-    
+    # Select data to shown dependent on dropdown menu
     if(input$select_A_tabel == "Standaard"){
-      
-      # Take data as datatable
-      datatable(SQL_output$data_final_Sector_R, rownames = NULL,
-                caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-                options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100, 500), 
-                               initComplete = JS( #change colnames fontsize
-                                 "function(settings, json) {",
-                                 "$(this.api().table().header()).css({'font-size': '85%'});",
-                                 "$(this.api().table().header()).css({'color': 'steelblue'});",
-                                 "}")
-                ))
-      
-    }else if(input$select_A_tabel == "Bijstelling"){
-      
-      datatable(matrix(c(1,1)))
-      
+      SQL_output$data_shown_now <- SQL_output$data_final_Sector_R
+    }else if(input$select_A_tabel == "Bijstelling" && input$select_absoluut == "Absoluut"){
+      SQL_output$data_shown_now <- SQL_output$data_Sector_R_bijstelling_absoluut
+    }else if(input$select_A_tabel == "Bijstelling" && input$select_absoluut == "Procentueel"){
+      SQL_output$data_shown_now <- SQL_output$data_Sector_R_bijstelling_procentueel
     }else if(input$select_A_tabel == "Q-1/Y-1"){
-      
       datatable(matrix(c(2,2)))
-      
     }else if(input$select_A_tabel == "Q-4/Y-1"){
-      
       datatable(matrix(c(3,3)))
-      
     }
     
-    
+    # Present selected data as datatable
+    datatable(SQL_output$data_shown_now, rownames = NULL,
+              caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
+              options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100, 500), 
+                             initComplete = JS( #change colnames fontsize
+                               "function(settings, json) {",
+                               "$(this.api().table().header()).css({'font-size': '85%'});",
+                               "$(this.api().table().header()).css({'color': 'steelblue'});",
+                               "}")
+              ))
     
   }) # closing renderDT({})
   
@@ -261,7 +278,7 @@ server <- function(input, output, session) {
       paste0("A_Sector_R_", input$select_sector, "_", input$select_rekening, ".csv", sep = "")
     },
     content = function(file) {
-      write.table(SQL_output$data_final_Sector_R, file, row.names = FALSE, sep = ";")
+      write.table(SQL_output$data_shown_now, file, row.names = FALSE, sep = ";")
     }
   )
   
@@ -303,12 +320,20 @@ server <- function(input, output, session) {
   # Observe send button
   observeEvent(input$feedback_send, {
     
-    # Check if feedback is filled in, then append to existing .CSV file
-    if(input$feedback_main == ""){
-      showModal(modalDialog(title = "Voer eerst uw feedback in", 
+    # Check if there is main feedback input
+    observeEvent(req(input$feedback_main == ""), {
+      showModal(modalDialog(title = "Voer eerst uw feedback in",
                             HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
                             "voordat u op verzenden drukt.", footer = modalButton("Ok")))
-    }
+    })
+    
+    # Check if evaluation value is between 1 and 10
+    observeEvent(req(as.numeric(input$feedback_value) > 10 | as.numeric(input$feedback_value) < 1), {
+      showModal(modalDialog(title = "Geef een cijfer in tussen de 1 en de 10",
+                            HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
+                            "voordat u op verzenden drukt.", footer = modalButton("Ok")))
+    })
+    
     
     # Set file location
     feedback_file_location <- "//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Feedback/feedback.csv"
@@ -328,5 +353,6 @@ server <- function(input, output, session) {
                           "Wij gaan hiermee aan de slag.", footer = modalButton("Ok")))     
     
   }) 
+  
   
 } # closing server{}
