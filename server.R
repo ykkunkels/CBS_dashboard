@@ -1,7 +1,7 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.23    ###
+### Server version 0.0.24    ###
 ### YKK - 25-09-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
@@ -141,8 +141,8 @@ server <- function(input, output, session) {
         
         temp_drop <- c(setdiff(temp_data_05$Transactie, temp_data_10$Transactie), setdiff(temp_data_10$Transactie, temp_data_05$Transactie))
         
-        temp_data_05 <- temp_data_05[(temp_data_05[, "Transactie"] != temp_drop), ]
-        temp_data_10 <- temp_data_10[(temp_data_10[, "Transactie"] != temp_drop), ]
+        temp_data_05 <- temp_data_05[!(temp_data_05$Transactie %in% temp_drop), ]
+        temp_data_10 <- temp_data_10[!(temp_data_10$Transactie %in% temp_drop), ]
         
         temp_data_05$ID <- 1:nrow(temp_data_05)
         temp_data_10$ID <- 1:nrow(temp_data_05)

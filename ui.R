@@ -1,12 +1,10 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.23                ###
+### UI version 0.0.24                ###
 ### YKK - 25-09-2023                 ###
 ### Change log:                      ###
-###  >  Added "all" data selection   ###
-###  >  Added help section           ###
-###  >  Added dynamic welcome text   ###
+###  >  Fixed data selection "05+10" ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -46,7 +44,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.23", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.24", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
