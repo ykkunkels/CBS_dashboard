@@ -1,11 +1,12 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.22                ###
-### YKK - 19-09-2023                 ###
+### UI version 0.0.23                ###
+### YKK - 25-09-2023                 ###
 ### Change log:                      ###
-###  >  feedback development         ###
-###  >  Initial Bijstelling tables   ###
+###  >  Added "all" data selection   ###
+###  >  Added help section           ###
+###  >  Added dynamic welcome text   ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -17,6 +18,7 @@ if(!require('odbc')){install.packages('odbc', dep = TRUE)};library('odbc')
 if(!require('DT')){install.packages('DT', dep = TRUE)};library('DT')
 if(!require('dplyr')){install.packages('dplyr', dep = TRUE)};library('dplyr')
 if(!require('svDialogs')){install.packages('svDialogs', dep = TRUE)};library('svDialogs')
+if(!require('slickR')){install.packages('slickR', dep = TRUE)};library('slickR')
 
 ## UI ----
 # Define UI for application that draws a histogram
@@ -39,11 +41,12 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Overige tabbladen", tabName = "overige_tab", icon = icon("clipboard-question")),
                                                  
                                                  menuItem("Visualisaties", tabName = "visualisaties_tab", icon = icon("chart-line")),
+                                                 menuItem("Help", tabName = "help_tab", icon = icon("info")),
                                                  menuItem("Geef feedback", tabName = "feedback_tab", icon = icon("comment")),
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.22", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.23", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -57,7 +60,9 @@ ui <- dashboardPage(skin = "blue",
                                     tabItem(tabName = "welkom_tab", # welkom tab ----
                                             
                                             div(uiOutput("img_welkom", align = "center"),
-                                                h1("CBS Dashboard in R Shiny", align = "center")
+                                                
+                                                h1(textOutput("welcome_text"), align = "center"),
+                                                h1(em("CBS Dashboard in R Shiny"), align = "center", style="color:steelblue")
                                             )
                                             
                                     ), # closing welkom tabItem()
@@ -146,7 +151,7 @@ ui <- dashboardPage(skin = "blue",
                                                            
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_transactiesoort", label = "", width = "125px",
-                                                                              selected = "B", multiple = TRUE,
+                                                                              selected = "all", multiple = TRUE,
                                                                               choices = c("all", dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
                                                                                                                       Database = "HSR_ANA_PRD"), 
                                                                                                             paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort")))
@@ -280,6 +285,15 @@ ui <- dashboardPage(skin = "blue",
                                             plotOutput(outputId = "plot1", height = "600px")
                                             
                                     ), # closing visualisaties tabItem()
+                                    
+                                    tabItem(tabName = "help_tab", # feedback tab ----
+                                            
+                                            h2("Scroll door onderstaande afbeeldingen om de korte handleiding te lezen", align = "center"),
+                                            slickROutput("help_gallery", width = "85%"),
+                                            div(h3("Bij eventuele problemen, email Yoram K. Kunkels (yk.kunkels@cbs.nl)", 
+                                                   style = "position: absolute; bottom: 0; left: 700px;"))
+                                            
+                                    ), # closing help tabItem()
                                     
                                     tabItem(tabName = "feedback_tab", # feedback tab ----
                                             

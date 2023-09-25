@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.22    ###
-### YKK - 19-09-2023         ###
+### Server version 0.0.23    ###
+### YKK - 25-09-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -62,11 +62,21 @@ server <- function(input, output, session) {
     SQL_input$select_transactiesoort <- paste(input$select_transactiesoort, collapse = "', '" )
     SQL_input$select_onderdeel <- paste(input$select_onderdeel, collapse = "', '" )
     
-    SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
+    
+    if(input$select_transactiesoort == "all"){
+      
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
+                               FROM tbl_SR_Data_Transacties 
+                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
+                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"')  AND Onderdeel IN ('",SQL_input$select_onderdeel,"')")
+      
+    }else{
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
                                FROM tbl_SR_Data_Transacties 
                                WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
                                AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"') AND
                                TransactieSoort IN ('",SQL_input$select_transactiesoort,"') AND Onderdeel IN ('",SQL_input$select_onderdeel,"')")
+    }
     
     SQL_output$data_Sector_R <- dbGetQuery(SQL_input$connection, SQL_input$query)
     
@@ -118,6 +128,7 @@ server <- function(input, output, session) {
       SQL_output$data_reshaped_Sector_R <- SQL_output$data_reshaped_Sector_R[c(1:3, order(substr(colnames(SQL_output$data_reshaped_Sector_R[4:SQL_input$ncols]), 1, 4), 
                                                                                           substr(colnames(SQL_output$data_reshaped_Sector_R[4:SQL_input$ncols]), 8, temp_nchar)) + 3)]
       
+      
       # Exception for when "Onderdeel" is both "05" and "10"; combine to fill rows
       if(all(SQL_input$select_onderdeel == "05', '10" & (c(5, 10) %in% as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"]))) | 
          all(SQL_input$select_onderdeel == "10', '05" & (c(5, 10) %in% as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"])))){
@@ -133,7 +144,12 @@ server <- function(input, output, session) {
         temp_data_05 <- temp_data_05[(temp_data_05[, "Transactie"] != temp_drop), ]
         temp_data_10 <- temp_data_10[(temp_data_10[, "Transactie"] != temp_drop), ]
         
-        SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "Transactie")
+        temp_data_05$ID <- 1:nrow(temp_data_05)
+        temp_data_10$ID <- 1:nrow(temp_data_05)
+        
+        # SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "Transactie")
+        SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "ID")
+        SQL_output$data_reshaped_Sector_R$ID <- NULL 
         
         SQL_output$data_reshaped_Sector_R[, "Onderdeel"] <- "05 + 10"
         
@@ -230,8 +246,6 @@ server <- function(input, output, session) {
   # Initialise plot
   plot1 <- reactive({
     
-    # browser()
-    
     # Check to see if user selected JPS before trying to plot
     if(is.na(SQL_input$ncols)){
       showModal(modalDialog(title = "Er is nog géén JPS en/of data geselecteerd!", 
@@ -271,6 +285,18 @@ server <- function(input, output, session) {
   
   
   ## 4. Miscellaneous ----
+  # Dynamic welcome text
+  if(as.numeric(substr(Sys.time(), 12, 13)) >= 06 & as.numeric(substr(Sys.time(), 12, 13)) < 12){
+    output$welcome_text <- renderText(paste("Goedemorgen, welkom bij het"))
+  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 12 & as.numeric(substr(Sys.time(), 12, 13)) < 18){
+    output$welcome_text <- renderText(paste("Goedemiddag, welkom bij het"))
+  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 18 & as.numeric(substr(Sys.time(), 12, 13)) < 00){
+    output$welcome_text <- renderText(paste("Goedenavond, welkom bij het"))
+  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 00 & as.numeric(substr(Sys.time(), 12, 13)) < 06){
+    output$welcome_text <- renderText(paste("Goedenacht, welkom bij het"))
+  }
+  
+  
   # Download handlers
   # Actionbutton: download A.Sector_R as .CSV
   output$download_A_Sector_R <- downloadHandler(
@@ -354,5 +380,10 @@ server <- function(input, output, session) {
     
   }) 
   
+  # Initialise Help image gallery
+  output$help_gallery <- renderSlickR({
+    help_images <- list.files("//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Software Documentatie/help_gallery", pattern=".png", full.names = TRUE)
+    slickR(help_images)
+  })
   
 } # closing server{}
