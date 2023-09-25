@@ -1,10 +1,11 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.24                ###
+### UI version 0.0.25                ###
 ### YKK - 25-09-2023                 ###
 ### Change log:                      ###
-###  >  Fixed data selection "05+10" ###
+###  > Added "all" in "Onderdeel"    ###
+###  > Added dynamic bg_color        ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## Load and / or Install required packages ----
@@ -19,7 +20,12 @@ if(!require('svDialogs')){install.packages('svDialogs', dep = TRUE)};library('sv
 if(!require('slickR')){install.packages('slickR', dep = TRUE)};library('slickR')
 
 ## UI ----
-# Define UI for application that draws a histogram
+# JS for dynamic bg_color
+js_bg_color <- "Shiny.addCustomMessageHandler('change_skin', function(skin) {
+        document.body.className = skin;
+       });"
+
+# Define UI 
 ui <- dashboardPage(skin = "blue",
                     
                     ## Header ----
@@ -44,13 +50,16 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.24", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.25", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
                     
                     ## Body ----
                     dashboardBody(useShinyjs(),
+                                  
+                                  # Setup dynamic bg_color
+                                  tags$head(tags$script(js_bg_color)),
                                   
                                   # Setup tabItems            
                                   tabItems(
@@ -123,7 +132,7 @@ ui <- dashboardPage(skin = "blue",
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Onderdeel"))),
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Weergave Tabel"))),
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Absoluut / procentueel"))),
-                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("JPS"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("JPS"))),
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Download .CSV")))
                                                            
                                                          ),
@@ -177,7 +186,7 @@ ui <- dashboardPage(skin = "blue",
                                                                               choices = c("Absoluut", "Procentueel"))
                                                            ),
                                                            
-                                                           column(width = 1, style = "margin-top: -5px; margin-bottom: -25px;",
+                                                           column(width = 2, style = "margin-top: -5px; margin-bottom: -25px;",
                                                                   verbatimTextOutput("code_JPS")
                                                            ),
                                                            
@@ -311,6 +320,11 @@ ui <- dashboardPage(skin = "blue",
                                     tabItem(tabName = "instellingen_tab", # Instellingen tab ----
                                             
                                             ## Role selection ----
+                                            h4("Stel achtergrond kleur in"),
+                                            selectInput("bg_color", "Achtergrond kleur", 
+                                                        c("blue", "black", "purple", 
+                                                          "green", "red", "yellow")),
+                                            
                                             hr(style = "border-top: 1px solid #000000"),
                                             h4("Work in progress"),
                                             radioButtons("selected_role", "Select your role to customise data selection:", 

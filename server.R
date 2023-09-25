@@ -1,7 +1,7 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.24    ###
+### Server version 0.0.25    ###
 ### YKK - 25-09-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
@@ -62,17 +62,25 @@ server <- function(input, output, session) {
     SQL_input$select_transactiesoort <- paste(input$select_transactiesoort, collapse = "', '" )
     SQL_input$select_onderdeel <- paste(input$select_onderdeel, collapse = "', '" )
     
-    
-    if(input$select_transactiesoort == "all"){
-      
+    if(all(input$select_transactiesoort == "all" & input$select_onderdeel == "all")){
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
+                               FROM tbl_SR_Data_Transacties 
+                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
+                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"')")
+    }else if(all(input$select_transactiesoort == "all" & any(input$select_onderdeel != "all"))){
       SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
                                FROM tbl_SR_Data_Transacties 
                                WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
                                AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"')  AND Onderdeel IN ('",SQL_input$select_onderdeel,"')")
-      
-    }else{
+    }else if(any(input$select_transactiesoort != "all" & input$select_onderdeel == "all")){
       SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
                                FROM tbl_SR_Data_Transacties 
+                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
+                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"') AND
+                               TransactieSoort IN ('",SQL_input$select_transactiesoort,"')")
+    }else if(any(input$select_transactiesoort != "all" & input$select_onderdeel != "all")){
+      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
+                               FROM tbl_SR_Data_Transacties
                                WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
                                AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"') AND
                                TransactieSoort IN ('",SQL_input$select_transactiesoort,"') AND Onderdeel IN ('",SQL_input$select_onderdeel,"')")
@@ -384,6 +392,11 @@ server <- function(input, output, session) {
   output$help_gallery <- renderSlickR({
     help_images <- list.files("//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Software Documentatie/help_gallery", pattern=".png", full.names = TRUE)
     slickR(help_images)
+  })
+  
+  # Change background colour
+  observeEvent(input$bg_color, {
+    session$sendCustomMessage("change_skin", paste0("skin-", input$bg_color))
   })
   
 } # closing server{}
