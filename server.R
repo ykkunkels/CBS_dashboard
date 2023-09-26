@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.25    ###
-### YKK - 25-09-2023         ###
+### Server version 0.0.26    ###
+### YKK - 26-09-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -13,6 +13,7 @@ server <- function(input, output, session) {
   SQL_output <- reactiveValues(data_JPS = NA, code_JPS = NA, data_Sector_R_JPS = NA, data_Sector_R = NA, data_aggregated_Sector_R = NA, 
                                data_final_Sector_R = NA, data_Sector_R_bijstelling = NA)
   plot_parameters <- reactiveValues(temp_drop = 0, labels = NA)
+  user_parameters <- reactiveValues(feedback_save = TRUE)
   
   # Define SQL connection
   SQL_input$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
@@ -111,6 +112,7 @@ server <- function(input, output, session) {
                                              SQL_output$data_Sector_R$Periode, "-",
                                              SQL_output$data_Sector_R$Status)
       
+      
       # Aggregate data to sum over values
       SQL_output$data_aggregated_Sector_R <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie + Onderdeel, SQL_output$data_Sector_R, sum)
       
@@ -147,21 +149,44 @@ server <- function(input, output, session) {
         temp_data_05 <- SQL_output$data_reshaped_Sector_R[temp_select_data_05, ]
         temp_data_10 <- SQL_output$data_reshaped_Sector_R[temp_select_data_10, ]
         
-        temp_drop <- c(setdiff(temp_data_05$Transactie, temp_data_10$Transactie), setdiff(temp_data_10$Transactie, temp_data_05$Transactie))
         
-        temp_data_05 <- temp_data_05[!(temp_data_05$Transactie %in% temp_drop), ]
-        temp_data_10 <- temp_data_10[!(temp_data_10$Transactie %in% temp_drop), ]
         
-        temp_data_05$ID <- 1:nrow(temp_data_05)
-        temp_data_10$ID <- 1:nrow(temp_data_05)
+        if(nrow(temp_data_05) == nrow(temp_data_10)){
+          
+          temp_data_05$ID <- 1:nrow(temp_data_05)
+          temp_data_10$ID <- 1:nrow(temp_data_10)
+          
+          SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "ID")
+          
+        }else{
+          
+          temp_drop <- c(setdiff(temp_data_05$Transactie, temp_data_10$Transactie), setdiff(temp_data_10$Transactie, temp_data_05$Transactie))
+          
+          temp_data_05 <- temp_data_05[!(temp_data_05$Transactie %in% temp_drop), ]
+          temp_data_10 <- temp_data_10[!(temp_data_10$Transactie %in% temp_drop), ]
+          
+          temp_data_05$ID <- 1:nrow(temp_data_05)
+          temp_data_10$ID <- 1:nrow(temp_data_10)
+          
+          SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "ID")
+          SQL_output$data_reshaped_Sector_R$ID <- NULL 
+          
+          SQL_output$data_reshaped_Sector_R[, "Onderdeel"] <- "05 + 10"
+          
+        }
         
-        # SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "Transactie")
-        SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "ID")
-        SQL_output$data_reshaped_Sector_R$ID <- NULL 
         
-        SQL_output$data_reshaped_Sector_R[, "Onderdeel"] <- "05 + 10"
+        
         
       }
+      
+      # Sum "all" Onderdeel
+      if(all(input$select_onderdeel == "all")){
+        temp_onderdeel_loc <- which(colnames(SQL_output$data_reshaped_Sector_R) == "Onderdeel")
+        SQL_output$data_reshaped_Sector_R[is.na(SQL_output$data_reshaped_Sector_R)] <- 0
+        SQL_output$data_reshaped_Sector_R <- aggregate(. ~ Transactie + TransactieSoort, SQL_output$data_reshaped_Sector_R[, -temp_onderdeel_loc], sum)
+      }
+      
       
       # Create dataset "bijstelling_absoluut"
       temp_JPS_location_last_1 <- which(colnames(SQL_output$data_reshaped_Sector_R) == SQL_output$code_JPS)
@@ -184,7 +209,7 @@ server <- function(input, output, session) {
       SQL_output$data_Sector_R_bijstelling_procentueel <- cbind(SQL_output$data_reshaped_Sector_R[, 1:3], SQL_output$data_Sector_R_bijstelling_procentueel )
       
       
-      # Add decimal points (#! check if this doesn't introduce bugs)
+      # Add decimal points
       for(i in 3:(ncol(SQL_output$data_reshaped_Sector_R))){
         SQL_output$data_reshaped_Sector_R[, i] <- prettyNum(as.vector(SQL_output$data_reshaped_Sector_R[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
       }
@@ -296,11 +321,11 @@ server <- function(input, output, session) {
   # Dynamic welcome text
   if(as.numeric(substr(Sys.time(), 12, 13)) >= 06 & as.numeric(substr(Sys.time(), 12, 13)) < 12){
     output$welcome_text <- renderText(paste("Goedemorgen, welkom bij het"))
-  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 12 & as.numeric(substr(Sys.time(), 12, 13)) < 18){
+  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 12 & as.numeric(substr(Sys.time(), 12, 13)) < 17){
     output$welcome_text <- renderText(paste("Goedemiddag, welkom bij het"))
-  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 18 & as.numeric(substr(Sys.time(), 12, 13)) < 00){
+  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 17 & as.numeric(substr(Sys.time(), 12, 13)) < 23){
     output$welcome_text <- renderText(paste("Goedenavond, welkom bij het"))
-  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 00 & as.numeric(substr(Sys.time(), 12, 13)) < 06){
+  }else if(as.numeric(substr(Sys.time(), 12, 13)) >= 23 & as.numeric(substr(Sys.time(), 12, 13)) < 06){
     output$welcome_text <- renderText(paste("Goedenacht, welkom bij het"))
   }
   
@@ -351,8 +376,10 @@ server <- function(input, output, session) {
     updateTextInput(session, "feedback_value", value="")
   })
   
+  
   # Observe send button
   observeEvent(input$feedback_send, {
+    
     
     # Check if there is main feedback input
     observeEvent(req(input$feedback_main == ""), {
@@ -362,12 +389,12 @@ server <- function(input, output, session) {
     })
     
     # Check if evaluation value is between 1 and 10
-    observeEvent(req(as.numeric(input$feedback_value) > 10 | as.numeric(input$feedback_value) < 1), {
-      showModal(modalDialog(title = "Geef een cijfer in tussen de 1 en de 10",
-                            HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
-                            "voordat u op verzenden drukt.", footer = modalButton("Ok")))
-    })
-    
+    observeEvent(req(as.numeric(input$feedback_value) > 10 | as.numeric(input$feedback_value) < 1 |
+                       !suppressWarnings(!is.na(as.numeric(as.character(input$feedback_value))))), {
+                         showModal(modalDialog(title = "Geef een cijfer in tussen de 1 en de 10",
+                                               HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
+                                               "voordat u op verzenden drukt.", footer = modalButton("Ok")))
+                       })
     
     # Set file location
     feedback_file_location <- "//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Feedback/feedback.csv"
@@ -379,12 +406,14 @@ server <- function(input, output, session) {
     inputs_data_frame <- data.frame(Naam = input$feedback_naam, Feedback = input$feedback_main, Missing = input$feedback_missing,
                                     Errors = input$feedback_errors, Good = input$feedback_good, Value = input$feedback_value)
     
+    
     # Save Inputs
     write.table(inputs_data_frame, file = feedback_file_location, row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE)
     
     showModal(modalDialog(title = "Bedankt voor uw feedback!", 
                           icon("face-smile-beam"),
-                          "Wij gaan hiermee aan de slag.", footer = modalButton("Ok")))     
+                          "Wij gaan hiermee aan de slag.", footer = modalButton("Ok"))) 
+    
     
   }) 
   
