@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.26    ###
-### YKK - 26-09-2023         ###
+### Server version 0.0.27    ###
+### YKK - 02-10-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -241,6 +241,7 @@ server <- function(input, output, session) {
     datatable(SQL_output$data_shown_now, rownames = NULL,
               caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
               options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100, 500), 
+                             columnDefs = list(list(className = 'dt-head-right', targets = "_all"), list(className = 'dt-right', targets = "_all")),
                              initComplete = JS( #change colnames fontsize
                                "function(settings, json) {",
                                "$(this.api().table().header()).css({'font-size': '85%'});",

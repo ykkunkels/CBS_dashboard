@@ -1,13 +1,11 @@
 
-########################################
-### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.26                ###
-### YKK - 26-09-2023                 ###
-### Change log:                      ###
-###  > Fixed dynamic time text       ###
-###  > Patched feedback value test   ###
-###  > Changed "Onderdeel" selection ###
-###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
+#################################
+### TEST Shiny CBS Dashboard  ###
+### UI version 0.0.27         ###
+### YKK - 02-10-2023          ###
+### Change log:               ###
+###  > General fixes          ###
+###~*~*~*~*~*~*~*~*~*~*~*~*~*~###
 
 ## 0. Basic Operations ----
 # Load and / or Install required packages
@@ -52,7 +50,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.26", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.27", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -321,11 +319,24 @@ ui <- dashboardPage(skin = "blue",
                                     
                                     tabItem(tabName = "instellingen_tab", # Instellingen tab ----
                                             
-                                            # Background color
-                                            h4("Stel achtergrond kleur in"),
-                                            selectInput("bg_color", "Achtergrond kleur", 
-                                                        c("blue", "black", "purple", 
-                                                          "green", "red", "yellow")),
+                                            
+                                            # Sector_R: Populate dropdown menu's directly from SQL 
+                                            fluidRow(
+                                              column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Achtergrondkleur"))),
+                                              column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Aantal getoonde kolommen")))
+                                            ),
+                                            
+                                            
+                                            fluidRow(
+                                              column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                     selectInput("bg_color", label = "", choices = c("blue", "black", "purple", "green", "red", "yellow"))
+                                              ),
+                                              
+                                              column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                     selectInput("settings_ncol", label = "", choices = c(0, 2, 4, 6, 8, "all"))
+                                              )
+                                            ),
+                                            
                                             
                                             # Role selection
                                             hr(style = "border-top: 1px solid #000000"),
