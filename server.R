@@ -1,162 +1,223 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.27    ###
-### YKK - 02-10-2023         ###
+### Server version 0.0.28    ###
+### YKK - 06-11-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
   
-  ## 0. Basic Operations ----
-  # Define & initialise reactiveValues objects
-  SQL_input <- reactiveValues(connection = NA, query = NA, query_JPS = NA, select_transactiesoort = NA, select_onderdeel = NA, ncols = NA)
-  SQL_output <- reactiveValues(data_JPS = NA, code_JPS = NA, data_Sector_R_JPS = NA, data_Sector_R = NA, data_aggregated_Sector_R = NA, 
-                               data_final_Sector_R = NA, data_Sector_R_bijstelling = NA)
+  ## 0. Basic Operations -----------------------------------------------------------------------------------------------------------
+  # Define & initialise reactiveValues objects: parameters
+  SQL_parameters <- reactiveValues(connection = NA, query = NA, query_JPS = NA)
+  selection_parameters <- reactiveValues(select_transactiesoort = NA, select_onderdeel = NA)
+  misc_parameters <- reactiveValues(ncols = NA)
   plot_parameters <- reactiveValues(temp_drop = 0, labels = NA)
   user_parameters <- reactiveValues(feedback_save = TRUE)
   
+  # Define & initialise reactiveValues objects: data
+  main_data <- reactiveValues(data_Sector_R_early = NA, data_Sector_R = NA, data_Sector_R_aggregated = NA,
+                              data_Sector_R_reshaped = NA, data_Sector_R_bijstelling = NA, data_Sector_R_final = NA,
+                              data_Sector_R_bijstelling_absoluut = NA, data_Sector_R_bijstelling_procentueel = NA,
+                              data_shown_now = NA)
+  # proxy_data <- reactiveValues(proxy = NA, proxy_query = NA, proxy_edit = NA, proxy_orig = NA)
+  JPS_data <- reactiveValues(code_JPS = NA, data_JPS = NA, data_JPS_df = NA)
+  
   # Define SQL connection
-  SQL_input$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
+  SQL_parameters$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
   
   
-  ## 1. Initialise: Data ----
+  ## 1. Initialise: JPS Data --------------------------------------------------------------------------------------------------------
   # Query JPS data
   data_JPS <- reactive({
     
-    SQL_input$query_JPS <- paste0("SELECT JPS_code, Smin1_code, Tmin1_code, Tmin1Ref_code, Qmin1_code
-                                   FROM 	tbl_SR_JPSReferentie
-                                   WHERE 	Jaar = ('",input$select_JPS_jaar,"') AND Status = ('",input$select_JPS_status,"')")
+    SQL_parameters$query_JPS <- paste0("SELECT JPS_code, Smin1_code, Tmin1_code, Tmin1Ref_code, Qmin1_code
+                                  FROM tbl_SR_JPSReferentie
+                                  WHERE	Jaar = ('",input$select_JPS_jaar,"') AND Status = ('",input$select_JPS_status,"')")
     
-    SQL_output$data_Sector_R_JPS <- dbGetQuery(SQL_input$connection, SQL_input$query_JPS)
+    JPS_data$data_JPS <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query_JPS)
     
-    SQL_output$code_JPS <- SQL_output$data_Sector_R_JPS$JPS_code[1]
+    JPS_data$code_JPS <- JPS_data$data_JPS$JPS_code[1]
     
+  })
+  
+  # Hard-code JPS data dataframe
+  data_JPS_hardcoded <- reactive({
+    
+    data_JPS()
+    
+    JPS_data$data_JPS_df <- data.frame(
+      matrix(data = c("JPS", "Referentie", "Tmin1", "Tmin1 Referentie", "Qmin1",
+                      JPS_data$data_JPS$JPS_code[2], JPS_data$data_JPS$Smin1_code[2], JPS_data$data_JPS$Tmin1_code[2], JPS_data$data_JPS$Tmin1Ref_code[2], JPS_data$data_JPS$Qmin1_code[2],
+                      JPS_data$data_JPS$JPS_code[3], JPS_data$data_JPS$Smin1_code[3], JPS_data$data_JPS$Tmin1_code[3], JPS_data$data_JPS$Tmin1Ref_code[3], JPS_data$data_JPS$Qmin1_code[3],
+                      JPS_data$data_JPS$JPS_code[4], JPS_data$data_JPS$Smin1_code[4], JPS_data$data_JPS$Tmin1_code[4], JPS_data$data_JPS$Tmin1Ref_code[4], JPS_data$data_JPS$Qmin1_code[4],
+                      JPS_data$data_JPS$JPS_code[5], JPS_data$data_JPS$Smin1_code[5], JPS_data$data_JPS$Tmin1_code[5], JPS_data$data_JPS$Tmin1Ref_code[5], JPS_data$data_JPS$Qmin1_code[5],
+                      JPS_data$data_JPS$JPS_code[1], JPS_data$data_JPS$Smin1_code[1], JPS_data$data_JPS$Tmin1_code[1], JPS_data$data_JPS$Tmin1Ref_code[1], JPS_data$data_JPS$Qmin1_code[1]
+      ), nrow = 5, ncol = 6
+      )
+    )
   })
   
   # Render JPS data
   output$data_JPS <- renderDT({
     
-    data_JPS()
-    # Hard-code JPS data matrix
-    data_JPS_setup <- data.frame(
-      matrix(data = c("JPS", "Referentie", "Tmin1", "Tmin1 Referentie", "Qmin1",
-                      SQL_output$data_Sector_R_JPS$JPS_code[2], SQL_output$data_Sector_R_JPS$Smin1_code[2], SQL_output$data_Sector_R_JPS$Tmin1_code[2], SQL_output$data_Sector_R_JPS$Tmin1Ref_code[2], SQL_output$data_Sector_R_JPS$Qmin1_code[2],
-                      SQL_output$data_Sector_R_JPS$JPS_code[3], SQL_output$data_Sector_R_JPS$Smin1_code[3], SQL_output$data_Sector_R_JPS$Tmin1_code[3], SQL_output$data_Sector_R_JPS$Tmin1Ref_code[3], SQL_output$data_Sector_R_JPS$Qmin1_code[3],
-                      SQL_output$data_Sector_R_JPS$JPS_code[4], SQL_output$data_Sector_R_JPS$Smin1_code[4], SQL_output$data_Sector_R_JPS$Tmin1_code[4], SQL_output$data_Sector_R_JPS$Tmin1Ref_code[4], SQL_output$data_Sector_R_JPS$Qmin1_code[4],
-                      SQL_output$data_Sector_R_JPS$JPS_code[5], SQL_output$data_Sector_R_JPS$Smin1_code[5], SQL_output$data_Sector_R_JPS$Tmin1_code[5], SQL_output$data_Sector_R_JPS$Tmin1Ref_code[5], SQL_output$data_Sector_R_JPS$Qmin1_code[5],
-                      SQL_output$data_Sector_R_JPS$JPS_code[1], SQL_output$data_Sector_R_JPS$Smin1_code[1], SQL_output$data_Sector_R_JPS$Tmin1_code[1], SQL_output$data_Sector_R_JPS$Tmin1Ref_code[1], SQL_output$data_Sector_R_JPS$Qmin1_code[1]
-      ), nrow = 5, ncol = 6
-      )
-    )
+    data_JPS_hardcoded()
     
-    datatable(data_JPS_setup, 
+    datatable(JPS_data$data_JPS_df, 
               colnames = c("Periode", "1", "2", "3", "4", "Y"), rownames = F,
               caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-              options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100)))
+              options = list(dom = "t",
+                             initComplete = JS( #change colnames fontsize
+                               "function(settings, json) {",
+                               "$(this.api().table().header()).css({'color': 'steelblue'});",
+                               "}")))
     
   })
   
+  
+  ## 2. Initialise: Sector_R Data ----------------------------------------------------------------------------------------------------
+  
+  # Query Sector_R_early data
+  data_Sector_R_early <- reactive({
+    
+    if(!"data_Sector_R_early.rds" %in% list.files()){
+      
+      SQL_parameters$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
+                               FROM tbl_SR_Data_Transacties
+                               WHERE Jaar BETWEEN ('",(as.integer(substr(JPS_data$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(JPS_data$code_JPS, 1, 4)),"')
+                               ")
+      
+      main_data$data_Sector_R_early <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query)
+      
+      # Save as RDS
+      saveRDS(main_data$data_Sector_R_early, "data_Sector_R_early.rds")
+      
+    }else{
+      
+      main_data$data_Sector_R_early <- readRDS("data_Sector_R_early.rds")
+      
+    }
+    
+  })
   
   # Query Sector_R data
   data_Sector_R <- reactive({
     
-    SQL_input$select_transactiesoort <- paste(input$select_transactiesoort, collapse = "', '" )
-    SQL_input$select_onderdeel <- paste(input$select_onderdeel, collapse = "', '" )
+    data_Sector_R_early()
     
+    # Select query based on variable that can have "all" input ("select_transactiesoort" and "select_onderdeel")
     if(all(input$select_transactiesoort == "all" & input$select_onderdeel == "all")){
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
-                               FROM tbl_SR_Data_Transacties 
-                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
-                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"')")
+      
+      temp_data <- main_data$data_Sector_R_early[which(main_data$data_Sector_R_early$Sector == input$select_sector), ]
+      temp_data <- temp_data[which(temp_data$Rekening == input$select_rekening), ]
+      
     }else if(all(input$select_transactiesoort == "all" & any(input$select_onderdeel != "all"))){
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
-                               FROM tbl_SR_Data_Transacties 
-                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
-                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"')  AND Onderdeel IN ('",SQL_input$select_onderdeel,"')")
+      
+      temp_data <- main_data$data_Sector_R_early[which(main_data$data_Sector_R_early$Sector == input$select_sector), ]
+      temp_data <- temp_data[temp_data$Onderdeel %in% input$select_onderdeel, ]
+      temp_data <- temp_data[which(temp_data$Rekening == input$select_rekening), ]
+      
     }else if(any(input$select_transactiesoort != "all" & input$select_onderdeel == "all")){
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
-                               FROM tbl_SR_Data_Transacties 
-                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
-                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"') AND
-                               TransactieSoort IN ('",SQL_input$select_transactiesoort,"')")
+      
+      temp_data <- main_data$data_Sector_R_early[which(main_data$data_Sector_R_early$Sector == input$select_sector), ]
+      temp_data <- temp_data[temp_data$TransactieSoort %in% input$select_transactiesoort, ]
+      temp_data <- temp_data[which(temp_data$Rekening == input$select_rekening), ]
+      
     }else if(any(input$select_transactiesoort != "all" & input$select_onderdeel != "all")){
-      SQL_input$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
-                               FROM tbl_SR_Data_Transacties
-                               WHERE Jaar BETWEEN ('",(as.integer(substr(SQL_output$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(SQL_output$code_JPS, 1, 4)),"')
-                               AND Waarde_Type='R' AND Sector=('",input$select_sector,"') AND Rekening=('",input$select_rekening,"') AND
-                               TransactieSoort IN ('",SQL_input$select_transactiesoort,"') AND Onderdeel IN ('",SQL_input$select_onderdeel,"')")
+      
+      temp_data <- main_data$data_Sector_R_early[which(main_data$data_Sector_R_early$Sector == input$select_sector), ]
+      temp_data <- temp_data[temp_data$TransactieSoort %in% input$select_transactiesoort, ]
+      temp_data <- temp_data[temp_data$Onderdeel %in% input$select_onderdeel, ]
+      temp_data <- temp_data[which(temp_data$Rekening == input$select_rekening), ]
+      
     }
     
-    SQL_output$data_Sector_R <- dbGetQuery(SQL_input$connection, SQL_input$query)
+    main_data$data_Sector_R <- temp_data
     
   })
   
   
-  # Render Sector_R standaard data
-  output$data_Sector_R <- renderDT({
+  # Aggregate Sector_R data
+  data_Sector_R_aggregated <- reactive({
     
     data_Sector_R()
     
     isolate({
       
-      # Check to see if user selected JPS before trying to view data Sector_R
-      if(any(is.na(SQL_output$data_Sector_R_JPS)) & is.null(SQL_output$data_Sector_R$JPS)){
-        showModal(modalDialog(title = "Er is nog géén JPS geselecteerd!", 
-                              HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
-                              "Selecteer eerst een JPS", footer = tagList(actionButton(inputId = "goto_JPS", label = "Ga naar JPS'en"))))
-      } 
-      
-      
       # Add JPS variable
-      SQL_output$data_Sector_R$JPS <- paste0(SQL_output$data_Sector_R$Jaar, "-",
-                                             SQL_output$data_Sector_R$Periode, "-",
-                                             SQL_output$data_Sector_R$Status)
-      
+      main_data$data_Sector_R$JPS <- paste0(main_data$data_Sector_R$Jaar, "-",
+                                            main_data$data_Sector_R$Periode, "-",
+                                            main_data$data_Sector_R$Status)
       
       # Aggregate data to sum over values
-      SQL_output$data_aggregated_Sector_R <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie + Onderdeel, SQL_output$data_Sector_R, sum)
+      main_data$data_Sector_R_aggregated <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie + Onderdeel, main_data$data_Sector_R, sum)
       
       # Select only required JPSen
-      required_JPS <- as.character(unlist(SQL_output$data_Sector_R_JPS[c(2:5, 1), c(2, 1, 3)]))
-      SQL_output$data_aggregated_Sector_R <- SQL_output$data_aggregated_Sector_R[SQL_output$data_aggregated_Sector_R$JPS %in% required_JPS, ]
+      required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))
+      main_data$data_Sector_R_aggregated <- main_data$data_Sector_R_aggregated[main_data$data_Sector_R_aggregated$JPS %in% required_JPS, ]
       
-      # Reshape data from long to wide    
-      SQL_output$data_reshaped_Sector_R <- reshape(SQL_output$data_aggregated_Sector_R, direction = 'wide', idvar = c("Transactie", "TransactieSoort", "Onderdeel"), timevar = "JPS")
+    }) # closing isolate()
+  })
+  
+  
+  # Reshape Sector_R data from long to wide
+  data_Sector_R_reshaped <- reactive({
+    
+    data_Sector_R_aggregated()
+    
+    # Reshape data from long to wide    
+    main_data$data_Sector_R_reshaped <- reshape(main_data$data_Sector_R_aggregated, direction = 'wide', idvar = c("Transactie", "TransactieSoort", "Onderdeel"), timevar = "JPS")
+    
+  })
+  
+  
+  # Adjust Sector_R data; renaming, sorting, etc.
+  data_Sector_R_adjusted <- reactive({
+    
+    data_Sector_R_reshaped()
+    
+    isolate({
       
-      # Drop unnecessary columns
-      drop <- grep(c("Rekening."), colnames(SQL_output$data_reshaped_Sector_R))
-      SQL_output$data_reshaped_Sector_R <- SQL_output$data_reshaped_Sector_R[, -drop]
+      if(any(grep("Rekening.", colnames(main_data$data_Sector_R_reshaped)) !=0)){
+        
+        # Drop unnecessary columns
+        drop <- grep(c("Rekening."), colnames(main_data$data_Sector_R_reshaped))
+        main_data$data_Sector_R_reshaped <- main_data$data_Sector_R_reshaped[, -drop]
+        
+      }
       
-      # Rename colnames
-      colnames(SQL_output$data_reshaped_Sector_R) <- gsub("Waarde.", "", colnames(SQL_output$data_reshaped_Sector_R))
+      if(any(grep("Waarde.", colnames(main_data$data_Sector_R_reshaped)) !=0)){
+        
+        # Rename colnames
+        colnames(main_data$data_Sector_R_reshaped) <- gsub("Waarde.", "", colnames(main_data$data_Sector_R_reshaped))
+        
+      }
       
       # Initialise variables to sort columns
-      SQL_input$ncols <- ncol(SQL_output$data_reshaped_Sector_R)
-      temp_nchar <- max(nchar(colnames(SQL_output$data_reshaped_Sector_R)[4:SQL_input$ncols]))
+      misc_parameters$ncols <- ncol(main_data$data_Sector_R_reshaped)
+      temp_nchar <- max(nchar(colnames(main_data$data_Sector_R_reshaped)[4:misc_parameters$ncols]))
       
       # Sort columns
-      SQL_output$data_reshaped_Sector_R <- SQL_output$data_reshaped_Sector_R[c(1:3, order(substr(colnames(SQL_output$data_reshaped_Sector_R[4:SQL_input$ncols]), 1, 4), 
-                                                                                          substr(colnames(SQL_output$data_reshaped_Sector_R[4:SQL_input$ncols]), 8, temp_nchar)) + 3)]
+      main_data$data_Sector_R_reshaped <- main_data$data_Sector_R_reshaped[c(1:3, order(substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 1, 4), 
+                                                                                        substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 8, temp_nchar)) + 3)]
       
       
       # Exception for when "Onderdeel" is both "05" and "10"; combine to fill rows
-      if(all(SQL_input$select_onderdeel == "05', '10" & (c(5, 10) %in% as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"]))) | 
-         all(SQL_input$select_onderdeel == "10', '05" & (c(5, 10) %in% as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"])))){
+      if(all(paste(input$select_onderdeel, collapse = "', '" ) == "05', '10" & (c(5, 10) %in% as.numeric(main_data$data_Sector_R_reshaped[, "Onderdeel"]))) | 
+         all(paste(input$select_onderdeel, collapse = "', '" ) == "10', '05" & (c(5, 10) %in% as.numeric(main_data$data_Sector_R_reshaped[, "Onderdeel"])))){
         
-        temp_select_data_05 <- (as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"]) == 5)
-        temp_select_data_10 <- (as.numeric(SQL_output$data_reshaped_Sector_R[, "Onderdeel"]) == 10)
+        temp_select_data_05 <- (as.numeric(main_data$data_Sector_R_reshaped[, "Onderdeel"]) == 5)
+        temp_select_data_10 <- (as.numeric(main_data$data_Sector_R_reshaped[, "Onderdeel"]) == 10)
         
-        temp_data_05 <- SQL_output$data_reshaped_Sector_R[temp_select_data_05, ]
-        temp_data_10 <- SQL_output$data_reshaped_Sector_R[temp_select_data_10, ]
-        
-        
+        temp_data_05 <- main_data$data_Sector_R_reshaped[temp_select_data_05, ]
+        temp_data_10 <- main_data$data_Sector_R_reshaped[temp_select_data_10, ]
         
         if(nrow(temp_data_05) == nrow(temp_data_10)){
           
           temp_data_05$ID <- 1:nrow(temp_data_05)
           temp_data_10$ID <- 1:nrow(temp_data_10)
           
-          SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "ID")
+          main_data$data_Sector_R_reshaped <- rows_patch(temp_data_05, temp_data_10, by = "ID")
           
         }else{
           
@@ -168,79 +229,82 @@ server <- function(input, output, session) {
           temp_data_05$ID <- 1:nrow(temp_data_05)
           temp_data_10$ID <- 1:nrow(temp_data_10)
           
-          SQL_output$data_reshaped_Sector_R <- rows_patch(temp_data_05, temp_data_10, by = "ID")
-          SQL_output$data_reshaped_Sector_R$ID <- NULL 
+          main_data$data_Sector_R_reshaped <- rows_patch(temp_data_05, temp_data_10, by = "ID")
+          main_data$data_Sector_R_reshaped$ID <- NULL 
           
-          SQL_output$data_reshaped_Sector_R[, "Onderdeel"] <- "05 + 10"
-          
+          main_data$data_Sector_R_reshaped[, "Onderdeel"] <- "05 + 10"
         }
-        
-        
-        
-        
       }
       
       # Sum "all" Onderdeel
       if(all(input$select_onderdeel == "all")){
-        temp_onderdeel_loc <- which(colnames(SQL_output$data_reshaped_Sector_R) == "Onderdeel")
-        SQL_output$data_reshaped_Sector_R[is.na(SQL_output$data_reshaped_Sector_R)] <- 0
-        SQL_output$data_reshaped_Sector_R <- aggregate(. ~ Transactie + TransactieSoort, SQL_output$data_reshaped_Sector_R[, -temp_onderdeel_loc], sum)
+        temp_onderdeel_loc <- which(colnames(main_data$data_Sector_R_reshaped) == "Onderdeel")
+        main_data$data_Sector_R_reshaped[is.na(main_data$data_Sector_R_reshaped)] <- 0
+        main_data$data_Sector_R_reshaped <- aggregate(. ~ Transactie + TransactieSoort, main_data$data_Sector_R_reshaped[, -temp_onderdeel_loc], sum)
       }
       
-      
       # Create dataset "bijstelling_absoluut"
-      temp_JPS_location_last_1 <- which(colnames(SQL_output$data_reshaped_Sector_R) == SQL_output$code_JPS)
+      temp_JPS_location_last_1 <- which(colnames(main_data$data_Sector_R_reshaped) == JPS_data$code_JPS)
       temp_JPS_location_first_1 <- (temp_JPS_location_last_1 - 4)
       
-      temp_bijstelling_1 <- SQL_output$data_reshaped_Sector_R[, (temp_JPS_location_first_1:temp_JPS_location_last_1)]
+      temp_bijstelling_1 <- main_data$data_Sector_R_reshaped[, (temp_JPS_location_first_1:temp_JPS_location_last_1)]
       
-      temp_JPS_location_last_2 <- which(colnames(SQL_output$data_reshaped_Sector_R) == SQL_output$data_Sector_R_JPS[1, 2])
+      temp_JPS_location_last_2 <- which(colnames(main_data$data_Sector_R_reshaped) == JPS_data$data_JPS[1, 2])
       temp_JPS_location_first_2 <- (temp_JPS_location_last_2 - 4)
       
-      temp_bijstelling_2 <- SQL_output$data_reshaped_Sector_R[, (temp_JPS_location_first_2:temp_JPS_location_last_2)]
+      temp_bijstelling_2 <- main_data$data_Sector_R_reshaped[, (temp_JPS_location_first_2:temp_JPS_location_last_2)]
       
-      SQL_output$data_Sector_R_bijstelling_absoluut <- (temp_bijstelling_1 - temp_bijstelling_2)
-      
-      SQL_output$data_Sector_R_bijstelling_absoluut <- cbind(SQL_output$data_reshaped_Sector_R[, 1:3], SQL_output$data_Sector_R_bijstelling_absoluut )
-      
+      main_data$data_Sector_R_bijstelling_absoluut <- (temp_bijstelling_1 - temp_bijstelling_2)
+      main_data$data_Sector_R_bijstelling_absoluut <- cbind(main_data$data_Sector_R_reshaped[, 1:3], main_data$data_Sector_R_bijstelling_absoluut)
       
       # Create dataset "bijstelling_procentueel"
-      SQL_output$data_Sector_R_bijstelling_procentueel <- round(((temp_bijstelling_1 / (temp_bijstelling_1 + temp_bijstelling_2)) * 100), 2)
-      SQL_output$data_Sector_R_bijstelling_procentueel <- cbind(SQL_output$data_reshaped_Sector_R[, 1:3], SQL_output$data_Sector_R_bijstelling_procentueel )
-      
+      main_data$data_Sector_R_bijstelling_procentueel <- round(((temp_bijstelling_1 / (temp_bijstelling_1 + temp_bijstelling_2)) * 100), 2)
+      main_data$data_Sector_R_bijstelling_procentueel <- cbind(main_data$data_Sector_R_reshaped[, 1:3], main_data$data_Sector_R_bijstelling_procentueel)
       
       # Add decimal points
-      for(i in 3:(ncol(SQL_output$data_reshaped_Sector_R))){
-        SQL_output$data_reshaped_Sector_R[, i] <- prettyNum(as.vector(SQL_output$data_reshaped_Sector_R[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
+      for(i in 3:(ncol(main_data$data_Sector_R_reshaped))){
+        main_data$data_Sector_R_reshaped[, i] <- prettyNum(as.vector(main_data$data_Sector_R_reshaped[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
       }
       
       # Set "NA" and zero's to whitespace
-      SQL_output$data_reshaped_Sector_R[SQL_output$data_reshaped_Sector_R == "NA" | SQL_output$data_reshaped_Sector_R == 0] <- ""
+      main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped == "NA" | main_data$data_Sector_R_reshaped == 0] <- ""
       
-      # Finalise dataset "Standaard"
-      SQL_output$data_final_Sector_R <- SQL_output$data_reshaped_Sector_R
-      
-      
+      # Finalise dataset 
+      main_data$data_Sector_R_final <- main_data$data_Sector_R_reshaped
       
     }) # closing isolate()
     
+  })
+  
+  
+  # Render Sector_R data
+  output$data_Sector_R <- renderDT({
+    
+    data_Sector_R_adjusted()
+    
+    # Check to see if user selected JPS before trying to view data Sector_R
+    if(any(is.na(JPS_data$data_JPS)) & is.na(JPS_data$code_JPS)){
+      showModal(modalDialog(title = "Er is nog géén JPS geselecteerd!", 
+                            HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
+                            "Selecteer eerst een JPS", footer = tagList(actionButton(inputId = "goto_JPS", label = "Ga naar JPS'en"))))
+    } 
+    
     # Select data to shown dependent on dropdown menu
     if(input$select_A_tabel == "Standaard"){
-      SQL_output$data_shown_now <- SQL_output$data_final_Sector_R
+      main_data$data_shown_now <- main_data$data_Sector_R_final
     }else if(input$select_A_tabel == "Bijstelling" && input$select_absoluut == "Absoluut"){
-      SQL_output$data_shown_now <- SQL_output$data_Sector_R_bijstelling_absoluut
+      main_data$data_shown_now <- main_data$data_Sector_R_bijstelling_absoluut
     }else if(input$select_A_tabel == "Bijstelling" && input$select_absoluut == "Procentueel"){
-      SQL_output$data_shown_now <- SQL_output$data_Sector_R_bijstelling_procentueel
+      main_data$data_shown_now <- main_data$data_Sector_R_bijstelling_procentueel
     }else if(input$select_A_tabel == "Q-1/Y-1"){
       datatable(matrix(c(2,2)))
     }else if(input$select_A_tabel == "Q-4/Y-1"){
       datatable(matrix(c(3,3)))
     }
     
-    # Present selected data as datatable
-    datatable(SQL_output$data_shown_now, rownames = NULL,
+    datatable(main_data$data_shown_now, rownames = NULL,
               caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-              options = list(scrollX = TRUE, pageLength = 15, lengthMenu = c(15, 20, 30, 50, 100, 500), 
+              options = list(scrollX = TRUE, pageLength = 12, lengthMenu = c(12, 20, 30, 50, 100, 500), 
                              columnDefs = list(list(className = 'dt-head-right', targets = "_all"), list(className = 'dt-right', targets = "_all")),
                              initComplete = JS( #change colnames fontsize
                                "function(settings, json) {",
@@ -252,7 +316,7 @@ server <- function(input, output, session) {
   }) # closing renderDT({})
   
   
-  ## 2. Initialise UI elements ----
+  ## 3. Initialise UI elements -------------------------------------------------------------------------------------------------------
   # Get CBS logo from external web-host
   output$logo <- renderUI({
     src_logo <- "https://www.cbs.nl/Content/images/cbs-ld-logo.png"
@@ -266,22 +330,20 @@ server <- function(input, output, session) {
     div(id = "img_welkom", tags$img(src = src_welkom, width = "60%", height = "auto"))
   })
   
-  
   # Get data JPS info
-  output$code_JPS <- renderText({paste0(SQL_output$code_JPS)})
+  output$code_JPS <- renderText({paste0(JPS_data$code_JPS)})
   
   
-  ## 3. Plotting ----
+  ## 4. Plotting ----
   # Populate drop-down menu's with transactions
   observe({
-    updateSelectInput(session = session, inputId = "plot1_y", choices = SQL_output$data_reshaped_Sector_R[, "Transactie"])
+    updateSelectInput(session = session, inputId = "plot1_y", choices = main_data$data_Sector_R_reshaped["Transactie"])
   })
   
   # Initialise plot
   plot1 <- reactive({
-    
     # Check to see if user selected JPS before trying to plot
-    if(is.na(SQL_input$ncols)){
+    if(is.na(misc_parameters$ncols)){
       showModal(modalDialog(title = "Er is nog géén JPS en/of data geselecteerd!", 
                             HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
                             "Selecteer eerst een JPS en/of data", 
@@ -289,25 +351,34 @@ server <- function(input, output, session) {
                                              actionButton(inputId = "goto_Sectoranalyse", label = "Ga naar Sector R data"))))
     } 
     
-    # Get y-axis data, get y-axis n, set color, and set labels
-    plot_y_data <- as.numeric(SQL_output$data_reshaped_Sector_R[which(SQL_output$data_reshaped_Sector_R[ , "Transactie"] == input$plot1_y), 4:SQL_input$ncols])
-    n_yaxis <- length(plot_y_data)
-    if(any(plot_y_data >= 0)){temp_col <- "steelblue"} else{temp_col <- "red"}
-    plot_parameters$labels <- colnames(SQL_output$data_reshaped_Sector_R)[4:(n_yaxis + 3)]
+    # Get x- and y-axis data, set labels
+    plot_data <- list("x" = NA, "y" = NA)
+    temp_data <- main_data$data_shown_now[main_data$data_shown_now$TransactieSoort == input$plot1_B_or_M, ]
+    plot_data$y <- as.numeric(temp_data[which(temp_data["Transactie"] == input$plot1_y), 4:misc_parameters$ncols])
+    n_yaxis <- length(plot_data$y)
+    plot_data$x <- 1:n_yaxis
+    plot_parameters$labels <- colnames(main_data$data_shown_now)[4:(n_yaxis + 3)]
     
     # Exception for dropping year means
     if(input$drop_year_means == TRUE){
-      plot_parameters$temp_drop <- which(substr(colnames(SQL_output$data_reshaped_Sector_R)[4:SQL_input$ncols], 5, 7) == "-Y-")
-      plot_y_data <- plot_y_data[-plot_parameters$temp_drop]
-      plot_parameters$labels <- colnames(SQL_output$data_reshaped_Sector_R)[4:(n_yaxis + 3)][-plot_parameters$temp_drop]
-      n_yaxis <- length(plot_y_data)
+      plot_parameters$temp_drop <- which(substr(colnames(main_data$data_shown_now)[4:misc_parameters$ncols], 5, 7) == "-Y-")
+      plot_data$y <- plot_data$y[-plot_parameters$temp_drop]
+      plot_parameters$labels <- colnames(main_data$data_shown_now)[4:(n_yaxis + 3)][-plot_parameters$temp_drop]
+      n_yaxis <- length(plot_data$y)
+      plot_data$x <- 1:n_yaxis
     }
     
-    
-    # Plotting and axis customisation 
-    plot(x = 1:n_yaxis, y = plot_y_data, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
-         main = paste("Waarde van Transactie", input$plot1_y), col = temp_col)
+    # Plotting and axis customisation; clip() for color change below zero
+    plot(x = plot_data$x, y = plot_data$y, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
+         main = paste("Waarde van Transactie", input$plot1_y), col = "steelblue")
+    clip(x1 = min(plot_data$x),
+         x2 = max(plot_data$x),
+         y1 = min(plot_data$y),
+         y2 = 0)
+    lines(plot_data, col = "firebrick1")
     axis(side = 1, at = 1:n_yaxis, labels = plot_parameters$labels)
+    abline(h = 0)
+    abline(v = plot_data$x, col = "lightgrey")
     
     # Record plot for downloadHandler()
     recordPlot()
@@ -318,7 +389,7 @@ server <- function(input, output, session) {
   output$plot1 <- renderPlot({replayPlot(req(plot1()))})
   
   
-  ## 4. Miscellaneous ----
+  ## 5. Miscellaneous ----------------------------------------------------------------------------------------------------------------
   # Dynamic welcome text
   if(as.numeric(substr(Sys.time(), 12, 13)) >= 06 & as.numeric(substr(Sys.time(), 12, 13)) < 12){
     output$welcome_text <- renderText(paste("Goedemorgen, welkom bij het"))
@@ -330,7 +401,6 @@ server <- function(input, output, session) {
     output$welcome_text <- renderText(paste("Goedenacht, welkom bij het"))
   }
   
-  
   # Download handlers
   # Actionbutton: download A.Sector_R as .CSV
   output$download_A_Sector_R <- downloadHandler(
@@ -338,7 +408,7 @@ server <- function(input, output, session) {
       paste0("A_Sector_R_", input$select_sector, "_", input$select_rekening, ".csv", sep = "")
     },
     content = function(file) {
-      write.table(SQL_output$data_shown_now, file, row.names = FALSE, sep = ";")
+      write.table(main_data$data_Sector_R_final, file, row.names = FALSE, sep = ";")
     }
   )
   
@@ -360,63 +430,11 @@ server <- function(input, output, session) {
     removeModal()
   })
   
-  # Jump to JPS tab when goto_JPS button is clicked
+  # Jump to JPS tab when goto_Sectoranalyse button is clicked
   observeEvent(input$goto_Sectoranalyse, {
     updateTabItems(session, "sidebarmenu", "A_tab")
     removeModal()
   })
-  
-  # Feedback Handler
-  # Observe reset button
-  observeEvent(input$feedback_reset, {
-    updateTextInput(session, "feedback_naam", value="")
-    updateTextInput(session, "feedback_main", value="")
-    updateTextInput(session, "feedback_missing", value="")
-    updateTextInput(session, "feedback_errors", value="")
-    updateTextInput(session, "feedback_good", value="")
-    updateTextInput(session, "feedback_value", value="")
-  })
-  
-  
-  # Observe send button
-  observeEvent(input$feedback_send, {
-    
-    
-    # Check if there is main feedback input
-    observeEvent(req(input$feedback_main == ""), {
-      showModal(modalDialog(title = "Voer eerst uw feedback in",
-                            HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
-                            "voordat u op verzenden drukt.", footer = modalButton("Ok")))
-    })
-    
-    # Check if evaluation value is between 1 and 10
-    observeEvent(req(as.numeric(input$feedback_value) > 10 | as.numeric(input$feedback_value) < 1 |
-                       !suppressWarnings(!is.na(as.numeric(as.character(input$feedback_value))))), {
-                         showModal(modalDialog(title = "Geef een cijfer in tussen de 1 en de 10",
-                                               HTML('<img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Feedbin-Icon-error.svg">'),
-                                               "voordat u op verzenden drukt.", footer = modalButton("Ok")))
-                       })
-    
-    # Set file location
-    feedback_file_location <- "//cbsp.nl/productie/secundair/IT_NR/Werk/OntwikkelOmgeving/Dashboard ve-R-nieuwen/Feedback/feedback.csv"
-    
-    # Load previous feedback
-    feedback_file <- read.table(feedback_file_location, sep = ";", header = TRUE)
-    
-    # Inputs data.frame
-    inputs_data_frame <- data.frame(Naam = input$feedback_naam, Feedback = input$feedback_main, Missing = input$feedback_missing,
-                                    Errors = input$feedback_errors, Good = input$feedback_good, Value = input$feedback_value)
-    
-    
-    # Save Inputs
-    write.table(inputs_data_frame, file = feedback_file_location, row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE)
-    
-    showModal(modalDialog(title = "Bedankt voor uw feedback!", 
-                          icon("face-smile-beam"),
-                          "Wij gaan hiermee aan de slag.", footer = modalButton("Ok"))) 
-    
-    
-  }) 
   
   # Initialise Help image gallery
   output$help_gallery <- renderSlickR({

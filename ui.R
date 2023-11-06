@@ -1,13 +1,16 @@
 
-#################################
-### TEST Shiny CBS Dashboard  ###
-### UI version 0.0.27         ###
-### YKK - 02-10-2023          ###
-### Change log:               ###
-###  > General fixes          ###
-###~*~*~*~*~*~*~*~*~*~*~*~*~*~###
+########################################
+### TEST Shiny CBS Dashboard         ###
+### UI version 0.0.28                ###
+### YKK - 06-11-2023                 ###
+### Change log:                      ###
+###   > Rewrote reactive() calls     ###
+###   > Major speed inprovement      ###
+###   > improved plotting            ###
+###   > improved tables layout       ###
+###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
-## 0. Basic Operations ----
+## 0. Basic Operations -------------------------------------------------------------------------------------------------------------
 # Load and / or Install required packages
 if(!require('shiny')){install.packages('shiny', dep = TRUE)};library('shiny')
 if(!require('shinydashboard')){install.packages('shinydashboard', dep = TRUE)};library('shinydashboard')
@@ -25,13 +28,13 @@ js_bg_color <- "Shiny.addCustomMessageHandler('change_skin', function(skin) {
        });"
 
 
-## 1. Define UI ----
+## 1. Define UI --------------------------------------------------------------------------------------------------------------------
 ui <- dashboardPage(skin = "blue",
                     
-                    ## Header ----
+                    ## Header
                     dashboardHeader(title = "CBS Dashboard"),
                     
-                    ## Sidebar ----
+                    ## Sidebar
                     dashboardSidebar(width = 230,
                                      sidebarMenu(menuItem("Menu"), id = "sidebarmenu",
                                                  menuItem("Welkom", tabName = "welkom_tab", icon = icon("door-open")),
@@ -50,12 +53,12 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.27", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.28", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
                     
-                    ## Body ----
+                    ## Body --------------------------------------------------------------------------------------------------------
                     dashboardBody(useShinyjs(),
                                   
                                   # Setup dynamic bg_color
@@ -64,7 +67,7 @@ ui <- dashboardPage(skin = "blue",
                                   # Setup tabItems            
                                   tabItems(
                                     
-                                    tabItem(tabName = "welkom_tab", # welkom tab ----
+                                    tabItem(tabName = "welkom_tab", # welkom tab ---------------------------------------------------
                                             
                                             div(uiOutput("img_welkom", align = "center"),
                                                 
@@ -74,7 +77,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing welkom tabItem()
                                     
-                                    tabItem(tabName = "JPS_tab", # JPS tab ----
+                                    tabItem(tabName = "JPS_tab", # JPS tab ---------------------------------------------------------
                                             
                                             fluidPage(
                                               
@@ -114,7 +117,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing JPS tabItem()
                                     
-                                    tabItem(tabName = "A_tab", # A tab ----
+                                    tabItem(tabName = "A_tab", # A tab ---------------------------------------------------------------
                                             
                                             ## Navbarpage: A. tabbladen
                                             navbarPage(
@@ -130,10 +133,10 @@ ui <- dashboardPage(skin = "blue",
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Rekening"))),
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("TransactieSoort"))),
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Onderdeel"))),
-                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Weergave Tabel"))),
-                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Absoluut / procentueel"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Weergave Tabel"))),
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Absoluut / procentueel"))),
                                                            column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("JPS"))),
-                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Download .CSV")))
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Download .CSV")))
                                                            
                                                          ),
                                                          
@@ -174,13 +177,13 @@ ui <- dashboardPage(skin = "blue",
                                                                   )
                                                            ),
                                                            
-                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_A_tabel", label = "", width = "125px",
                                                                               selected = "Standaard",
                                                                               choices = c("Standaard", "Bijstelling", "Q-1/Y-1", "Q-4/Y-1"))
                                                            ),
                                                            
-                                                           column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                           column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_absoluut", label = "", width = "125px",
                                                                               selected = "Absoluut",
                                                                               choices = c("Absoluut", "Procentueel"))
@@ -190,7 +193,7 @@ ui <- dashboardPage(skin = "blue",
                                                                   verbatimTextOutput("code_JPS")
                                                            ),
                                                            
-                                                           column(width = 1, style = "margin-top: -5px; margin-bottom: -25px;",
+                                                           column(width = 2, style = "margin-top: -5px; margin-bottom: -25px;",
                                                                   downloadButton(outputId = "download_A_Sector_R", label = "Download")
                                                            )
                                                          ), # closing fluidRow()
@@ -214,7 +217,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing A tabItem()
                                     
-                                    tabItem(tabName = "B_tab", # B tab ----
+                                    tabItem(tabName = "B_tab", # B tab ------------------------------------------------------------
                                             
                                             ## Navbarpage: B. tabbladen
                                             navbarPage("B. Sectoranalyse",
@@ -229,7 +232,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing B tabItem()
                                     
-                                    tabItem(tabName = "G_tab", # G tab ----
+                                    tabItem(tabName = "G_tab", # G tab ------------------------------------------------------------
                                             
                                             ## Navbarpage: G. tabbladen
                                             navbarPage("G. Grote verschillen-analyse",
@@ -244,7 +247,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing G tabItem()
                                     
-                                    tabItem(tabName = "E_tab", # G tab ----
+                                    tabItem(tabName = "E_tab", # E tab -----------------------------------------------------------
                                             
                                             ## Navbarpage: E. tabbladen
                                             navbarPage("E. Eindintegratie",
@@ -254,7 +257,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing E tabItem()
                                     
-                                    tabItem(tabName = "X_tab", # G tab ----
+                                    tabItem(tabName = "X_tab", # X tab -----------------------------------------------------------
                                             
                                             ## Navbarpage: X. tabbladen
                                             navbarPage("X. Details",
@@ -263,7 +266,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing X tabItem()
                                     
-                                    tabItem(tabName = "overige_tab", # G tab ----
+                                    tabItem(tabName = "overige_tab", # overige tab ------------------------------------------------
                                             
                                             ## Navbarpage: overige tabbladen
                                             navbarPage("overige Tabbladen",
@@ -275,25 +278,37 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing overige tabItem()
                                     
-                                    tabItem(tabName = "visualisaties_tab", # visualisaties tab ----
+                                    tabItem(tabName = "visualisaties_tab", # visualisaties tab ------------------------------------
                                             
                                             fluidRow(
-                                              column(width = 4, h5(strong("Welcome! Here data can be plotted using the dropdown menu"))),
-                                              column(width = 4, h5(strong("Drop year means"))),
-                                              column(width = 4, h5(strong("Download plot via download button below")))
+                                              column(width = 12, style = "margin-top: -20px; margin-bottom: 0px;", h5(strong("Welcome! Here data can be plotted using the dropdown menu"))), 
                                             ),
                                             
                                             fluidRow(
-                                              column(width = 4, selectInput(inputId = "plot1_y", label = "y-axis", choices = NULL)),
-                                              column(width = 4, checkboxInput(inputId = "drop_year_means", label = "drop")),
-                                              column(width = 4, br(), downloadButton(outputId = "download_plot1", label = "Download"))
+                                              column(width = 3, style = "margin-top: -10px; margin-bottom: -10px;", h5(strong("y-axis"))),
+                                              column(width = 3, style = "margin-top: -10px; margin-bottom: -10px;", h5(strong("TransactieSoort"))),
+                                              column(width = 3, style = "margin-top: -10px; margin-bottom: -5px;", h5(strong("Drop year means"))),
+                                              column(width = 3, style = "margin-top: -10px; margin-bottom: -10px;", h5(strong("Download plot via download button below")))
                                             ),
+                                            
+                                            fluidRow(
+                                              column(width = 3, style = "margin-top: -5px; margin-bottom: -20px;", selectInput(inputId = "plot1_y", label = "", choices = NULL)),
+                                              column(width = 3, style = "margin-top: -5px; margin-bottom: -20px;", selectInput(inputId = "plot1_B_or_M", label = "", 
+                                                                                                                               choices = dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
+                                                                                                                                                              Database = "HSR_ANA_PRD"), 
+                                                                                                                                                    paste0("SELECT DISTINCT Transactiesoort FROM tbl_SR_Data_Transacties ORDER BY Transactiesoort"))
+                                              )),
+                                              column(width = 3, style = "margin-top: -5px; margin-bottom: -20px;", checkboxInput(inputId = "drop_year_means", label = "drop")),
+                                              column(width = 3, style = "margin-top: -5px; margin-bottom: -20px;", br(), downloadButton(outputId = "download_plot1", label = "Download"))
+                                            ),
+                                            
+                                            hr(style = "border-top: 1px solid #000000"),
                                             
                                             plotOutput(outputId = "plot1", height = "600px")
                                             
                                     ), # closing visualisaties tabItem()
                                     
-                                    tabItem(tabName = "help_tab", # feedback tab ----
+                                    tabItem(tabName = "help_tab", # help tab ----------------------------------------------------
                                             
                                             h2("Scroll door onderstaande afbeeldingen om de korte handleiding te lezen", align = "center"),
                                             slickROutput("help_gallery", width = "85%"),
@@ -302,7 +317,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing help tabItem()
                                     
-                                    tabItem(tabName = "feedback_tab", # feedback tab ----
+                                    tabItem(tabName = "feedback_tab", # feedback tab --------------------------------------------
                                             
                                             h4("Hieronder kunt u uw feedback over dit CBS dashboard achterlaten"),
                                             br(),
@@ -317,7 +332,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                     ), # closing feedback tabItem()
                                     
-                                    tabItem(tabName = "instellingen_tab", # Instellingen tab ----
+                                    tabItem(tabName = "instellingen_tab", # Instellingen tab ------------------------------------
                                             
                                             
                                             # Sector_R: Populate dropdown menu's directly from SQL 
