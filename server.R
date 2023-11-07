@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.28    ###
-### YKK - 06-11-2023         ###
+### Server version 0.0.29    ###
+### YKK - 07-11-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -16,12 +16,11 @@ server <- function(input, output, session) {
   user_parameters <- reactiveValues(feedback_save = TRUE)
   
   # Define & initialise reactiveValues objects: data
-  main_data <- reactiveValues(data_Sector_R_early = NA, data_Sector_R = NA, data_Sector_R_aggregated = NA,
-                              data_Sector_R_reshaped = NA, data_Sector_R_bijstelling = NA, data_Sector_R_final = NA,
-                              data_Sector_R_bijstelling_absoluut = NA, data_Sector_R_bijstelling_procentueel = NA,
-                              data_shown_now = NA)
-  # proxy_data <- reactiveValues(proxy = NA, proxy_query = NA, proxy_edit = NA, proxy_orig = NA)
   JPS_data <- reactiveValues(code_JPS = NA, data_JPS = NA, data_JPS_df = NA)
+  main_data <- reactiveValues(data_Sector_R_early = NA, data_Sector_R = NA, data_Sector_R_aggregated = NA,
+                              data_Sector_R_reshaped = NA, data_Sector_R_adjusted1 = NA, data_Sector_R_adjusted2 = NA, 
+                              data_Sector_R_bijstelling = NA, data_Sector_R_final = NA, data_Sector_R_bijstelling_absoluut = NA, 
+                              data_Sector_R_bijstelling_procentueel = NA, data_shown_now = NA)
   
   # Define SQL connection
   SQL_parameters$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
@@ -80,23 +79,12 @@ server <- function(input, output, session) {
   # Query Sector_R_early data
   data_Sector_R_early <- reactive({
     
-    if(!"data_Sector_R_early.rds" %in% list.files()){
-      
-      SQL_parameters$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
+    SQL_parameters$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
                                FROM tbl_SR_Data_Transacties
                                WHERE Jaar BETWEEN ('",(as.integer(substr(JPS_data$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(JPS_data$code_JPS, 1, 4)),"')
                                ")
-      
-      main_data$data_Sector_R_early <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query)
-      
-      # Save as RDS
-      saveRDS(main_data$data_Sector_R_early, "data_Sector_R_early.rds")
-      
-    }else{
-      
-      main_data$data_Sector_R_early <- readRDS("data_Sector_R_early.rds")
-      
-    }
+    
+    main_data$data_Sector_R_early <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query)
     
   })
   
@@ -172,7 +160,7 @@ server <- function(input, output, session) {
   
   
   # Adjust Sector_R data; renaming, sorting, etc.
-  data_Sector_R_adjusted <- reactive({
+  data_Sector_R_adjusted1 <- reactive({
     
     data_Sector_R_reshaped()
     
@@ -269,10 +257,29 @@ server <- function(input, output, session) {
       # Set "NA" and zero's to whitespace
       main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped == "NA" | main_data$data_Sector_R_reshaped == 0] <- ""
       
-      # Finalise dataset 
-      main_data$data_Sector_R_final <- main_data$data_Sector_R_reshaped
+      # Save intermediary data
+      main_data$data_Sector_R_adjusted1 <- main_data$data_Sector_R_reshaped
+      
       
     }) # closing isolate()
+    
+  })
+  
+  # Adjust Sector_R data; n column selection
+  data_Sector_R_adjusted2 <- reactive({
+    
+    data_Sector_R_adjusted1()
+    
+    # Set number of years after JPS according to dropdown
+    temp <- tail(grep("-", colnames(main_data$data_Sector_R_adjusted1)), (5 * as.integer(input$settings_ncol)))
+    temp <- unique(c((1:(grep("-", colnames(main_data$data_Sector_R_adjusted1))[1] - 1)), temp))
+    main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_adjusted1[, temp]
+    
+    # Update ncols
+    misc_parameters$ncols <- ncol(main_data$data_Sector_R_adjusted2)
+    
+    # Finalise dataset 
+    main_data$data_Sector_R_final <- main_data$data_Sector_R_adjusted2
     
   })
   
@@ -280,7 +287,7 @@ server <- function(input, output, session) {
   # Render Sector_R data
   output$data_Sector_R <- renderDT({
     
-    data_Sector_R_adjusted()
+    data_Sector_R_adjusted2()
     
     # Check to see if user selected JPS before trying to view data Sector_R
     if(any(is.na(JPS_data$data_JPS)) & is.na(JPS_data$code_JPS)){
@@ -337,7 +344,7 @@ server <- function(input, output, session) {
   ## 4. Plotting ----
   # Populate drop-down menu's with transactions
   observe({
-    updateSelectInput(session = session, inputId = "plot1_y", choices = main_data$data_Sector_R_reshaped["Transactie"])
+    updateSelectInput(session = session, inputId = "plot1_y", choices = main_data$data_shown_now["Transactie"])
   })
   
   # Initialise plot
@@ -368,13 +375,15 @@ server <- function(input, output, session) {
       plot_data$x <- 1:n_yaxis
     }
     
-    # Plotting and axis customisation; clip() for color change below zero
+    # Plotting and axis customisation; clip() for colour change below zero
     plot(x = plot_data$x, y = plot_data$y, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
          main = paste("Waarde van Transactie", input$plot1_y), col = "steelblue")
-    clip(x1 = min(plot_data$x),
-         x2 = max(plot_data$x),
-         y1 = min(plot_data$y),
-         y2 = 0)
+    if(!any(is.na(plot_data$y))){
+      clip(x1 = min(plot_data$x),
+           x2 = max(plot_data$x),
+           y1 = min(plot_data$y),
+           y2 = 0)
+    }
     lines(plot_data, col = "firebrick1")
     axis(side = 1, at = 1:n_yaxis, labels = plot_parameters$labels)
     abline(h = 0)
@@ -445,6 +454,12 @@ server <- function(input, output, session) {
   # Change background colour
   observeEvent(input$bg_color, {
     session$sendCustomMessage("change_skin", paste0("skin-", input$bg_color))
+  })
+  
+  # Do the following on closing app:
+  # - disconnect from SQl server
+  session$onSessionEnded(function() {
+    reactive({dbDisconnect(SQL_parameters$connection)})
   })
   
 } # closing server{}

@@ -1,13 +1,13 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.28                ###
+### in development branch            ###
+### UI version 0.0.29                ###
 ### YKK - 06-11-2023                 ###
 ### Change log:                      ###
-###   > Rewrote reactive() calls     ###
-###   > Major speed inprovement      ###
-###   > improved plotting            ###
-###   > improved tables layout       ###
+###   > fixed early data-save bugs   ###
+###   > Added closing of database    ###
+###   > ncol selection in settings   ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## 0. Basic Operations -------------------------------------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.28", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.29", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -334,13 +334,11 @@ ui <- dashboardPage(skin = "blue",
                                     
                                     tabItem(tabName = "instellingen_tab", # Instellingen tab ------------------------------------
                                             
-                                            
                                             # Sector_R: Populate dropdown menu's directly from SQL 
                                             fluidRow(
-                                              column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Achtergrondkleur"))),
-                                              column(width = 2, style = "margin-top: -25px; margin-bottom: 0;", h5(strong("Aantal getoonde kolommen")))
+                                              column(width = 2, style = "margin-top: 25px; margin-bottom: 0;", h5(strong("Achtergrondkleur"))),
+                                              column(width = 2, style = "margin-top: 25px; margin-bottom: 0;", h5(strong("Aantal getoonde JPS jaren")))
                                             ),
-                                            
                                             
                                             fluidRow(
                                               column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
@@ -348,25 +346,10 @@ ui <- dashboardPage(skin = "blue",
                                               ),
                                               
                                               column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
-                                                     selectInput("settings_ncol", label = "", choices = c(0, 2, 4, 6, 8, "all"))
+                                                     selectInput("settings_ncol", label = "", choices = c(1, 2, 3), selected = 3)
                                               )
                                             ),
                                             
-                                            
-                                            # Role selection
-                                            hr(style = "border-top: 1px solid #000000"),
-                                            h4("Work in progress"),
-                                            radioButtons("selected_role", "Select your role to customise data selection:", 
-                                                         inline = TRUE, selected = "Eindintegrator",
-                                                         c("Eindintegrator" = "Eindintegrator",
-                                                           "Sectorspecialist" = "Sectorspecialist",
-                                                           "Transactiespecialist" = "Transactiespecialist",
-                                                           "Duale classificatiespecialist" = "Duale classificatiespecialist",
-                                                           "SIM-expert" = "SIM-expert",
-                                                           "CWC-lid / Projectleider" = "CWC-lid / Projectleider",
-                                                           "R expert" = "R expert",
-                                                           "Custom (Advanced)" = "Custom")
-                                            )
                                     ) # closing Instellingen tabItem()
                                     
                                   ) # closing tabItems()
