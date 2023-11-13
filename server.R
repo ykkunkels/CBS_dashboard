@@ -2,7 +2,7 @@
 ################################
 ### TEST Shiny CBS Dashboard ###
 ### Server version 0.0.29    ###
-### YKK - 07-11-2023         ###
+### YKK - 13-11-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -21,6 +21,7 @@ server <- function(input, output, session) {
                               data_Sector_R_reshaped = NA, data_Sector_R_adjusted1 = NA, data_Sector_R_adjusted2 = NA, 
                               data_Sector_R_bijstelling = NA, data_Sector_R_final = NA, data_Sector_R_bijstelling_absoluut = NA, 
                               data_Sector_R_bijstelling_procentueel = NA, data_shown_now = NA)
+  misc_data <- reactiveValues("totals_A" = NA, "totals_B" = NA, "totals_M" = NA, "totals_P" = NA)
   
   # Define SQL connection
   SQL_parameters$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
@@ -231,6 +232,28 @@ server <- function(input, output, session) {
         main_data$data_Sector_R_reshaped <- aggregate(. ~ Transactie + TransactieSoort, main_data$data_Sector_R_reshaped[, -temp_onderdeel_loc], sum)
       }
       
+      
+      # Get TransactieSoort totals
+      misc_data$totals_A <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "A", -c(1:3)], na.rm = TRUE)
+      misc_data$totals_B <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "B", -c(1:3)], na.rm = TRUE)
+      misc_data$totals_M <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "M", -c(1:3)], na.rm = TRUE)
+      misc_data$totals_P <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "P", -c(1:3)], na.rm = TRUE)
+      
+      
+      for(i in 1:length(unique(main_data$data_Sector_R_reshaped$TransactieSoort))){
+        
+        # Add an empty row for every TransactieSoort totals
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped) + 1, ] <- NA
+        
+        # Fill empty row
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), "TransactieSoort"] <- unique(main_data$data_Sector_R_reshaped$TransactieSoort)[i]
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), "Transactie"] <- "Totaal"
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), "Onderdeel"] <- main_data$data_Sector_R_reshaped[1, "Onderdeel"]
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), -c(1:3)] <- eval(parse(text = paste0("misc_data$totals_", unique(main_data$data_Sector_R_reshaped$TransactieSoort)[i])))
+        
+      }
+      
+      
       # Create dataset "bijstelling_absoluut"
       temp_JPS_location_last_1 <- which(colnames(main_data$data_Sector_R_reshaped) == JPS_data$code_JPS)
       temp_JPS_location_first_1 <- (temp_JPS_location_last_1 - 4)
@@ -249,12 +272,12 @@ server <- function(input, output, session) {
       main_data$data_Sector_R_bijstelling_procentueel <- round(((temp_bijstelling_1 / (temp_bijstelling_1 + temp_bijstelling_2)) * 100), 2)
       main_data$data_Sector_R_bijstelling_procentueel <- cbind(main_data$data_Sector_R_reshaped[, 1:3], main_data$data_Sector_R_bijstelling_procentueel)
       
-      # Add decimal points
+      # Add decimal points (#! This is only a cosmetic change, but can introduce errors down the line (i.e., data is now character instead of numeric(!)))
       for(i in 3:(ncol(main_data$data_Sector_R_reshaped))){
         main_data$data_Sector_R_reshaped[, i] <- prettyNum(as.vector(main_data$data_Sector_R_reshaped[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
       }
       
-      # Set "NA" and zero's to whitespace
+      # Set "NA" and zero's to whitespace (#! This is only a cosmetic change, but can introduce errors down the line (i.e., can't do calculations with whitespaces, must have zero's for that instead(!)))
       main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped == "NA" | main_data$data_Sector_R_reshaped == 0] <- ""
       
       # Save intermediary data
@@ -311,7 +334,7 @@ server <- function(input, output, session) {
     
     datatable(main_data$data_shown_now, rownames = NULL,
               caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-              options = list(scrollX = TRUE, pageLength = 12, lengthMenu = c(12, 20, 30, 50, 100, 500), 
+              options = list(scrollX = TRUE, pageLength = input$settings_nrow, lengthMenu = c(12, 20, 30, 50, 100, input$settings_nrow), 
                              columnDefs = list(list(className = 'dt-head-right', targets = "_all"), list(className = 'dt-right', targets = "_all")),
                              initComplete = JS( #change colnames fontsize
                                "function(settings, json) {",

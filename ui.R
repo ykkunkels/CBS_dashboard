@@ -3,11 +3,13 @@
 ### TEST Shiny CBS Dashboard         ###
 ### in development branch            ###
 ### UI version 0.0.29                ###
-### YKK - 06-11-2023                 ###
+### YKK - 13-11-2023                 ###
 ### Change log:                      ###
 ###   > fixed early data-save bugs   ###
 ###   > Added closing of database    ###
 ###   > ncol selection in settings   ###
+###   > nrow set to max (+ settings) ###
+###   > added totals TransactieSoort ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## 0. Basic Operations -------------------------------------------------------------------------------------------------------------
@@ -334,10 +336,13 @@ ui <- dashboardPage(skin = "blue",
                                     
                                     tabItem(tabName = "instellingen_tab", # Instellingen tab ------------------------------------
                                             
-                                            # Sector_R: Populate dropdown menu's directly from SQL 
+                                            # Settings: bg colour, ncols, etc.
+                                            h2("Instellingen"),
+                                            
                                             fluidRow(
                                               column(width = 2, style = "margin-top: 25px; margin-bottom: 0;", h5(strong("Achtergrondkleur"))),
-                                              column(width = 2, style = "margin-top: 25px; margin-bottom: 0;", h5(strong("Aantal getoonde JPS jaren")))
+                                              column(width = 2, style = "margin-top: 25px; margin-bottom: 0;", h5(strong("Aantal getoonde JPS jaren"))),
+                                              column(width = 2, style = "margin-top: 25px; margin-bottom: 0;", h5(strong("Maximaal aantal getoonde rijen")))
                                             ),
                                             
                                             fluidRow(
@@ -347,8 +352,12 @@ ui <- dashboardPage(skin = "blue",
                                               
                                               column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
                                                      selectInput("settings_ncol", label = "", choices = c(1, 2, 3), selected = 3)
+                                              ),
+                                              
+                                              column(width = 2, style = "margin-top: -25px; margin-bottom: -25px;",
+                                                     numericInput("settings_nrow", label = "", value = 500)
                                               )
-                                            ),
+                                            )
                                             
                                     ) # closing Instellingen tabItem()
                                     
