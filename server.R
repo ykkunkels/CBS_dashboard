@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.28    ###
-### YKK - 06-11-2023         ###
+### Server version 0.0.29    ###
+### YKK - 13-11-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -16,12 +16,12 @@ server <- function(input, output, session) {
   user_parameters <- reactiveValues(feedback_save = TRUE)
   
   # Define & initialise reactiveValues objects: data
-  main_data <- reactiveValues(data_Sector_R_early = NA, data_Sector_R = NA, data_Sector_R_aggregated = NA,
-                              data_Sector_R_reshaped = NA, data_Sector_R_bijstelling = NA, data_Sector_R_final = NA,
-                              data_Sector_R_bijstelling_absoluut = NA, data_Sector_R_bijstelling_procentueel = NA,
-                              data_shown_now = NA)
-  # proxy_data <- reactiveValues(proxy = NA, proxy_query = NA, proxy_edit = NA, proxy_orig = NA)
   JPS_data <- reactiveValues(code_JPS = NA, data_JPS = NA, data_JPS_df = NA)
+  main_data <- reactiveValues(data_Sector_R_early = NA, data_Sector_R = NA, data_Sector_R_aggregated = NA,
+                              data_Sector_R_reshaped = NA, data_Sector_R_adjusted1 = NA, data_Sector_R_adjusted2 = NA, 
+                              data_Sector_R_bijstelling = NA, data_Sector_R_final = NA, data_Sector_R_bijstelling_absoluut = NA, 
+                              data_Sector_R_bijstelling_procentueel = NA, data_shown_now = NA)
+  misc_data <- reactiveValues("totals_A" = NA, "totals_B" = NA, "totals_M" = NA, "totals_P" = NA)
   
   # Define SQL connection
   SQL_parameters$connection <- dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", Database = "HSR_ANA_PRD")
@@ -80,23 +80,12 @@ server <- function(input, output, session) {
   # Query Sector_R_early data
   data_Sector_R_early <- reactive({
     
-    if(!"data_Sector_R_early.rds" %in% list.files()){
-      
-      SQL_parameters$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
+    SQL_parameters$query <- paste0("SELECT Jaar, Periode, Status, Sector, Transactie, TransactieSoort, Onderdeel, Waarde_Type, Rekening, Waarde
                                FROM tbl_SR_Data_Transacties
                                WHERE Jaar BETWEEN ('",(as.integer(substr(JPS_data$code_JPS, 1, 4)) - 1),"') AND ('",as.integer(substr(JPS_data$code_JPS, 1, 4)),"')
                                ")
-      
-      main_data$data_Sector_R_early <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query)
-      
-      # Save as RDS
-      saveRDS(main_data$data_Sector_R_early, "data_Sector_R_early.rds")
-      
-    }else{
-      
-      main_data$data_Sector_R_early <- readRDS("data_Sector_R_early.rds")
-      
-    }
+    
+    main_data$data_Sector_R_early <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query)
     
   })
   
@@ -172,7 +161,7 @@ server <- function(input, output, session) {
   
   
   # Adjust Sector_R data; renaming, sorting, etc.
-  data_Sector_R_adjusted <- reactive({
+  data_Sector_R_adjusted1 <- reactive({
     
     data_Sector_R_reshaped()
     
@@ -243,6 +232,28 @@ server <- function(input, output, session) {
         main_data$data_Sector_R_reshaped <- aggregate(. ~ Transactie + TransactieSoort, main_data$data_Sector_R_reshaped[, -temp_onderdeel_loc], sum)
       }
       
+      
+      # Get TransactieSoort totals
+      misc_data$totals_A <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "A", -c(1:3)], na.rm = TRUE)
+      misc_data$totals_B <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "B", -c(1:3)], na.rm = TRUE)
+      misc_data$totals_M <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "M", -c(1:3)], na.rm = TRUE)
+      misc_data$totals_P <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "P", -c(1:3)], na.rm = TRUE)
+      
+      
+      for(i in 1:length(unique(main_data$data_Sector_R_reshaped$TransactieSoort))){
+        
+        # Add an empty row for every TransactieSoort totals
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped) + 1, ] <- NA
+        
+        # Fill empty row
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), "TransactieSoort"] <- unique(main_data$data_Sector_R_reshaped$TransactieSoort)[i]
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), "Transactie"] <- "Totaal"
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), "Onderdeel"] <- main_data$data_Sector_R_reshaped[1, "Onderdeel"]
+        main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), -c(1:3)] <- eval(parse(text = paste0("misc_data$totals_", unique(main_data$data_Sector_R_reshaped$TransactieSoort)[i])))
+        
+      }
+      
+      
       # Create dataset "bijstelling_absoluut"
       temp_JPS_location_last_1 <- which(colnames(main_data$data_Sector_R_reshaped) == JPS_data$code_JPS)
       temp_JPS_location_first_1 <- (temp_JPS_location_last_1 - 4)
@@ -261,18 +272,37 @@ server <- function(input, output, session) {
       main_data$data_Sector_R_bijstelling_procentueel <- round(((temp_bijstelling_1 / (temp_bijstelling_1 + temp_bijstelling_2)) * 100), 2)
       main_data$data_Sector_R_bijstelling_procentueel <- cbind(main_data$data_Sector_R_reshaped[, 1:3], main_data$data_Sector_R_bijstelling_procentueel)
       
-      # Add decimal points
+      # Add decimal points (#! This is only a cosmetic change, but can introduce errors down the line (i.e., data is now character instead of numeric(!)))
       for(i in 3:(ncol(main_data$data_Sector_R_reshaped))){
         main_data$data_Sector_R_reshaped[, i] <- prettyNum(as.vector(main_data$data_Sector_R_reshaped[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
       }
       
-      # Set "NA" and zero's to whitespace
+      # Set "NA" and zero's to whitespace (#! This is only a cosmetic change, but can introduce errors down the line (i.e., can't do calculations with whitespaces, must have zero's for that instead(!)))
       main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped == "NA" | main_data$data_Sector_R_reshaped == 0] <- ""
       
-      # Finalise dataset 
-      main_data$data_Sector_R_final <- main_data$data_Sector_R_reshaped
+      # Save intermediary data
+      main_data$data_Sector_R_adjusted1 <- main_data$data_Sector_R_reshaped
+      
       
     }) # closing isolate()
+    
+  })
+  
+  # Adjust Sector_R data; n column selection
+  data_Sector_R_adjusted2 <- reactive({
+    
+    data_Sector_R_adjusted1()
+    
+    # Set number of years after JPS according to dropdown
+    temp <- tail(grep("-", colnames(main_data$data_Sector_R_adjusted1)), (5 * as.integer(input$settings_ncol)))
+    temp <- unique(c((1:(grep("-", colnames(main_data$data_Sector_R_adjusted1))[1] - 1)), temp))
+    main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_adjusted1[, temp]
+    
+    # Update ncols
+    misc_parameters$ncols <- ncol(main_data$data_Sector_R_adjusted2)
+    
+    # Finalise dataset 
+    main_data$data_Sector_R_final <- main_data$data_Sector_R_adjusted2
     
   })
   
@@ -280,7 +310,7 @@ server <- function(input, output, session) {
   # Render Sector_R data
   output$data_Sector_R <- renderDT({
     
-    data_Sector_R_adjusted()
+    data_Sector_R_adjusted2()
     
     # Check to see if user selected JPS before trying to view data Sector_R
     if(any(is.na(JPS_data$data_JPS)) & is.na(JPS_data$code_JPS)){
@@ -304,7 +334,7 @@ server <- function(input, output, session) {
     
     datatable(main_data$data_shown_now, rownames = NULL,
               caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-              options = list(scrollX = TRUE, pageLength = 12, lengthMenu = c(12, 20, 30, 50, 100, 500), 
+              options = list(scrollX = TRUE, pageLength = input$settings_nrow, lengthMenu = c(12, 20, 30, 50, 100, input$settings_nrow), 
                              columnDefs = list(list(className = 'dt-head-right', targets = "_all"), list(className = 'dt-right', targets = "_all")),
                              initComplete = JS( #change colnames fontsize
                                "function(settings, json) {",
@@ -337,7 +367,7 @@ server <- function(input, output, session) {
   ## 4. Plotting ----
   # Populate drop-down menu's with transactions
   observe({
-    updateSelectInput(session = session, inputId = "plot1_y", choices = main_data$data_Sector_R_reshaped["Transactie"])
+    updateSelectInput(session = session, inputId = "plot1_y", choices = main_data$data_shown_now["Transactie"])
   })
   
   # Initialise plot
@@ -368,13 +398,15 @@ server <- function(input, output, session) {
       plot_data$x <- 1:n_yaxis
     }
     
-    # Plotting and axis customisation; clip() for color change below zero
+    # Plotting and axis customisation; clip() for colour change below zero
     plot(x = plot_data$x, y = plot_data$y, type = "l", xlab = "Tijd", ylab = paste("Waarde (in miljoenen euro's)"), xaxt = "n", 
          main = paste("Waarde van Transactie", input$plot1_y), col = "steelblue")
-    clip(x1 = min(plot_data$x),
-         x2 = max(plot_data$x),
-         y1 = min(plot_data$y),
-         y2 = 0)
+    if(!any(is.na(plot_data$y))){
+      clip(x1 = min(plot_data$x),
+           x2 = max(plot_data$x),
+           y1 = min(plot_data$y),
+           y2 = 0)
+    }
     lines(plot_data, col = "firebrick1")
     axis(side = 1, at = 1:n_yaxis, labels = plot_parameters$labels)
     abline(h = 0)
@@ -445,6 +477,12 @@ server <- function(input, output, session) {
   # Change background colour
   observeEvent(input$bg_color, {
     session$sendCustomMessage("change_skin", paste0("skin-", input$bg_color))
+  })
+  
+  # Do the following on closing app:
+  # - disconnect from SQl server
+  session$onSessionEnded(function() {
+    reactive({dbDisconnect(SQL_parameters$connection)})
   })
   
 } # closing server{}
