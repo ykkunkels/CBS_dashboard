@@ -1,15 +1,10 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### in development branch            ###
-### UI version 0.0.29                ###
-### YKK - 13-11-2023                 ###
+### UI version 0.0.30                ###
+### YKK - 21-11-2023                 ###
 ### Change log:                      ###
-###   > fixed early data-save bugs   ###
-###   > Added closing of database    ###
-###   > ncol selection in settings   ###
-###   > nrow set to max (+ settings) ###
-###   > added totals TransactieSoort ###
+###   > fixes dynamic assignments    ### 
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## 0. Basic Operations -------------------------------------------------------------------------------------------------------------
@@ -55,7 +50,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.29", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.30", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -86,11 +81,12 @@ ui <- dashboardPage(skin = "blue",
                                               fluidRow(
                                                 
                                                 column(width = 3, style = "margin-top: 0; margin-bottom: -25px;", h5(strong("Jaar"))),
+                                                column(width = 3, style = "margin-top: 0; margin-bottom: -25px;", h5(strong("Periode"))),
                                                 column(width = 3, style = "margin-top: 0; margin-bottom: -25px;", h5(strong("Status")))
                                                 
                                               ),
                                               
-                                              # data JPS: Populate drop-down menu's directly from SQL
+                                              # data JPS: Populate drop-down menu's of "Jaar" and "Status" directly from SQL
                                               fluidRow(
                                                 column(3, style = "margin-top: 0; margin-bottom: -25px;", 
                                                        selectInput(inputId = "select_JPS_jaar", label = "", width = "100px", 
@@ -100,6 +96,12 @@ ui <- dashboardPage(skin = "blue",
                                                                                           paste0("SELECT DISTINCT Jaar FROM tbl_SR_JPSReferentie ORDER BY Jaar DESC")))
                                                        )
                                                 ),
+                                                
+                                                column(3, style = "margin-top: 0; margin-bottom: -25px;", 
+                                                       selectInput(inputId = "select_JPS_periode", label = "", width = "100px",
+                                                                   choices = c("Y + Q", "Y", "Q1", "Q2", "Q3", "Q4"))
+                                                ),
+                                                
                                                 column(3, style = "margin-top: 0; margin-bottom: -25px;", 
                                                        selectInput(inputId = "select_JPS_status", label = "", width = "100px",
                                                                    selected = "R", #! make dynamic
@@ -338,6 +340,7 @@ ui <- dashboardPage(skin = "blue",
                                             
                                             # Settings: bg colour, ncols, etc.
                                             h2("Instellingen"),
+                                            hr(style = "border-top: 1px solid #000000"),
                                             
                                             fluidRow(
                                               column(width = 2, style = "margin-top: 25px; margin-bottom: 0;", h5(strong("Achtergrondkleur"))),
