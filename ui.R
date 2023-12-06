@@ -1,10 +1,12 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.30                ###
-### YKK - 21-11-2023                 ###
+### UI version 0.0.31                ###
+### YKK - 28-11-2023                 ###
 ### Change log:                      ###
-###   > fixes dynamic assignments    ### 
+###   > Added summing "Onderdeel"    ###
+###   > Fixed "Bijstelling" issues   ###
+###   > General fixes                ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## 0. Basic Operations -------------------------------------------------------------------------------------------------------------
@@ -50,7 +52,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.30", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.31", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
