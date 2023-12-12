@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.31    ###
-### YKK - 28-11-2023         ###
+### Server version 0.0.32    ###
+### YKK - 04-12-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -305,7 +305,7 @@ server <- function(input, output, session) {
         
       }
       
-      # Create dataset "bijstelling_absoluut"
+      # Create dataset "bijstelling"
       if(JPS_data$code_JPS %in% colnames(main_data$data_Sector_R_reshaped)){
         
         temp_JPS_location_last_1 <- which(colnames(main_data$data_Sector_R_reshaped) == JPS_data$code_JPS)
@@ -328,15 +328,62 @@ server <- function(input, output, session) {
           
           temp_bijstelling_2 <- main_data$data_Sector_R_reshaped[, (temp_JPS_location_first_2:temp_JPS_location_last_2)]
           
+          # Create dataset "bijstelling_absoluut"
           main_data$data_Sector_R_bijstelling_absoluut <- (temp_bijstelling_1 - temp_bijstelling_2)
-          main_data$data_Sector_R_bijstelling_absoluut <- cbind(main_data$data_Sector_R_reshaped[, 1:2], main_data$data_Sector_R_bijstelling_absoluut)
+          colnames(main_data$data_Sector_R_bijstelling_absoluut) <- paste("\U0394", colnames(main_data$data_Sector_R_bijstelling_absoluut))
+          main_data$data_Sector_R_bijstelling_absoluut <- cbind(main_data$data_Sector_R_reshaped[, 1:2], temp_bijstelling_2, 
+                                                                temp_bijstelling_1, main_data$data_Sector_R_bijstelling_absoluut)
           
           # Create dataset "bijstelling_procentueel"
           main_data$data_Sector_R_bijstelling_procentueel <- round(((temp_bijstelling_1 / (temp_bijstelling_1 + temp_bijstelling_2)) * 100), 2)
-          main_data$data_Sector_R_bijstelling_procentueel <- cbind(main_data$data_Sector_R_reshaped[, 1:3], main_data$data_Sector_R_bijstelling_procentueel)
+          colnames(main_data$data_Sector_R_bijstelling_procentueel) <- paste("\U0394", colnames(main_data$data_Sector_R_bijstelling_procentueel))
+          main_data$data_Sector_R_bijstelling_procentueel <- cbind(main_data$data_Sector_R_reshaped[, 1:2], temp_bijstelling_2, 
+                                                                   temp_bijstelling_1, main_data$data_Sector_R_bijstelling_procentueel)
+        }
+      }
+      
+      
+      # Create dataset "Q-1/Y-1"
+      if((grep("-Y-", JPS_data$code_JPS) == 1)){
+        
+        temp_getcols <- grep(pattern = "-Y-", x = colnames(main_data$data_Sector_R_reshaped))
+        temp_Q1Y1_orig <- main_data$data_Sector_R_reshaped[, temp_getcols]
+        temp_Q1Y1_diff <- data.frame(matrix(0, nrow(temp_Q1Y1_orig), (ncol(temp_Q1Y1_orig) - 1)))
+        
+        for(i in ncol(temp_Q1Y1_orig):2){
+          temp_Q1Y1_diff[, (i - 1)] <- temp_Q1Y1_orig[, i] - temp_Q1Y1_orig[, (i - 1)]
         }
         
+        colnames(temp_Q1Y1_diff) <- paste("\U0394", colnames(temp_Q1Y1_orig[, -1]))
+        main_data$data_Sector_R_Q1Y1 <- cbind(main_data$data_Sector_R_reshaped[, 1:2], temp_Q1Y1_orig, temp_Q1Y1_diff)
+        
+      } else{
+        
+        temp_getcols <- grep(pattern = "-Y-", x = colnames(main_data$data_Sector_R_reshaped))
+        temp_Q1Y1_orig <- main_data$data_Sector_R_reshaped[, -c(1, 2, temp_getcols)]
+        temp_Q1Y1_diff <- data.frame(matrix(0, nrow(temp_Q1Y1_orig), (ncol(temp_Q1Y1_orig) - 1)))
+        
+        for(i in ncol(temp_Q1Y1_orig):2){
+          temp_Q1Y1_diff[, (i - 1)] <- temp_Q1Y1_orig[, i] - temp_Q1Y1_orig[, (i - 1)]
+        }
+        
+        colnames(temp_Q1Y1_diff) <- paste("\U0394", colnames(temp_Q1Y1_orig[, -1]))
+        main_data$data_Sector_R_Q1Y1 <- cbind(main_data$data_Sector_R_reshaped[, 1:2], temp_Q1Y1_orig, temp_Q1Y1_diff)
+        
       }
+      
+      # Create dataset "Q-4/Y-1"
+      temp_getcols <- grep(pattern = "-Y-", x = colnames(main_data$data_Sector_R_reshaped))
+      temp_Q4Y1_orig <- main_data$data_Sector_R_reshaped[, -c(1, 2, temp_getcols)]
+      temp_Q4Y1_diff <- data.frame(matrix(0, nrow(temp_Q4Y1_orig), (ncol(temp_Q4Y1_orig) - 1)))
+      
+      for(i in ncol(temp_Q4Y1_orig):2){
+        temp_Q4Y1_diff[, (i - 1)] <- temp_Q4Y1_orig[, i] - temp_Q4Y1_orig[, (i - 1)]
+      }
+      
+      colnames(temp_Q4Y1_diff) <- paste("\U0394", colnames(temp_Q4Y1_orig[, -1]))
+      main_data$data_Sector_R_Q4Y1 <- cbind(main_data$data_Sector_R_reshaped[, 1:2], temp_Q4Y1_orig, temp_Q4Y1_diff)
+      
       
       # Add decimal points (#! This is only a cosmetic change, but can introduce errors down the line (i.e., data is now character instead of numeric(!)))
       for(i in 3:(ncol(main_data$data_Sector_R_reshaped))){
@@ -355,7 +402,7 @@ server <- function(input, output, session) {
   
   # Adjust Sector_R data; n column selection
   data_Sector_R_adjusted2 <- reactive({
-    # browser()
+    
     data_Sector_R_adjusted1()
     
     # Set number of years after JPS according to dropdown
@@ -392,9 +439,9 @@ server <- function(input, output, session) {
     }else if(input$select_A_tabel == "Bijstelling" && input$select_absoluut == "Procentueel"){
       main_data$data_shown_now <- main_data$data_Sector_R_bijstelling_procentueel
     }else if(input$select_A_tabel == "Q-1/Y-1"){
-      datatable(matrix(c(2,2)))
+      main_data$data_shown_now <- main_data$data_Sector_R_Q1Y1 
     }else if(input$select_A_tabel == "Q-4/Y-1"){
-      datatable(matrix(c(3,3)))
+      main_data$data_shown_now <- main_data$data_Sector_R_Q4Y1
     }
     
     datatable(main_data$data_shown_now, rownames = NULL,
