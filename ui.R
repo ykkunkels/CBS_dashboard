@@ -1,11 +1,10 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.32                ###
-### YKK - 04-12-2023                 ###
+### UI version 0.0.33                ###
+### YKK - 05-12-2023                 ###
 ### Change log:                      ###
-###   > Added delta sign bijstelling ###
-###   > Adjusted Q1/Y1 & Q4/Y1       ###
+###   > JPS Periode selectable       ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## 0. Basic Operations -------------------------------------------------------------------------------------------------------------
@@ -51,7 +50,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.32", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.33", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -100,7 +99,7 @@ ui <- dashboardPage(skin = "blue",
                                                 
                                                 column(3, style = "margin-top: 0; margin-bottom: -25px;", 
                                                        selectInput(inputId = "select_JPS_periode", label = "", width = "100px",
-                                                                   choices = c("Y + Q", "Y", "Q1", "Q2", "Q3", "Q4"))
+                                                                   choices = c("Y + Q", "Y", "1", "2", "3", "4"))
                                                 ),
                                                 
                                                 column(3, style = "margin-top: 0; margin-bottom: -25px;", 

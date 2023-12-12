@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.32    ###
-### YKK - 04-12-2023         ###
+### Server version 0.0.33    ###
+### YKK - 05-12-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -17,9 +17,9 @@ server <- function(input, output, session) {
   
   # Define & initialise reactiveValues objects: data
   JPS_data <- reactiveValues(code_JPS = NA, data_JPS = NA, data_JPS_df = NA, drop_JPS = NA, data_JPS_df_final = matrix(NA, 1, 1),
-                             data_JPS_df_colnames = c("Periode", "1", "2", "3", "4", "Y"), data_JPS_df_ncol = 6, required_JPS = NA)
+                             data_JPS_df_colnames = c("Periode", "1", "2", "3", "4", "Y"), data_JPS_df_ncol = 6, required_JPS = NA, select_JPS = (2:6))
   main_data <- reactiveValues(data_Sector_R_early = NA, data_Sector_R = NA, data_Sector_R_aggregated = NA,
-                              data_Sector_R_reshaped = NA, data_Sector_R_adjusted1 = NA, data_Sector_R_adjusted2 = NA, 
+                              data_Sector_R_reshaped = NA, data_Sector_R_adjusted1 = NA, data_Sector_R_adjusted2 = NA, data_Sector_R_adjusted3 = NA, 
                               data_Sector_R_bijstelling = NA, data_Sector_R_final = NA, data_Sector_R_bijstelling_absoluut = NA, 
                               data_Sector_R_bijstelling_procentueel = NA, data_shown_now = NA)
   misc_data <- reactiveValues("totals_A" = NA, "totals_B" = NA, "totals_M" = NA, "totals_P" = NA)
@@ -34,11 +34,12 @@ server <- function(input, output, session) {
     
     SQL_parameters$query_JPS <- paste0("SELECT JPS_code, Smin1_code, Tmin1_code, Tmin1Ref_code, Qmin1_code
                                   FROM tbl_SR_JPSReferentie
-                                  WHERE	Jaar = ('",input$select_JPS_jaar,"') AND Status = ('",input$select_JPS_status,"')")
+                                  WHERE	Jaar = ('",input$select_JPS_jaar,"') AND  
+                                        Status = ('",input$select_JPS_status,"')")
     
     JPS_data$data_JPS <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query_JPS)
     
-    JPS_data$code_JPS <- JPS_data$data_JPS$JPS_code[1]
+    # JPS_data$code_JPS <- JPS_data$data_JPS$JPS_code[1]
     
   })
   
@@ -58,20 +59,27 @@ server <- function(input, output, session) {
       )
     )
     
-    observeEvent(input$select_JPS_periode, {
-      
-      # Drop columns depending on dropdown "Periode" input
-      if(input$select_JPS_periode == "Y + Q"){JPS_data$data_JPS_df_final <- JPS_data$data_JPS_df; JPS_data$drop_JPS <- NA; JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))}
-      if(input$select_JPS_periode == "Y"){JPS_data$drop_JPS <- c(2, 3, 4, 5); JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "Y"]}
-      if(input$select_JPS_periode == "Q1"){JPS_data$drop_JPS <- c(3, 4, 5, 6); JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "1"]}
-      if(input$select_JPS_periode == "Q2"){JPS_data$drop_JPS <- c(2, 4, 5, 6); JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "2"]}
-      if(input$select_JPS_periode == "Q3"){JPS_data$drop_JPS <- c(2, 3, 5, 6); JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "3"]}
-      if(input$select_JPS_periode == "Q4"){JPS_data$drop_JPS <- c(2, 3, 4, 6); JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "4"]}
-      
-      if(all(is.na(JPS_data$drop_JPS)) ==  FALSE){JPS_data$data_JPS_df_final <- JPS_data$data_JPS_df[, -JPS_data$drop_JPS]}
-      
-    })
     
+    
+    if(input$select_JPS_periode == "Y + Q"){
+      
+      JPS_data$select_JPS <- c(2:6)
+      JPS_data$data_JPS_df_final <- JPS_data$data_JPS_df
+      JPS_data$code_JPS <- JPS_data$data_JPS$JPS_code[1]
+      
+    }else if(input$select_JPS_periode == "Y"){
+      
+      JPS_data$select_JPS <- c(1, (grep(input$select_JPS_periode, JPS_data$data_JPS_df)))
+      JPS_data$data_JPS_df_final <- JPS_data$data_JPS_df[, JPS_data$select_JPS]
+      JPS_data$code_JPS <- JPS_data$data_JPS$JPS_code[grep(input$select_JPS_periode, substr(JPS_data$data_JPS$JPS_code, 6, 6))]
+      
+    }else{
+      
+      JPS_data$select_JPS <- c(1, (as.integer(input$select_JPS_periode) + 1))
+      JPS_data$data_JPS_df_final <- JPS_data$data_JPS_df[, JPS_data$select_JPS]
+      JPS_data$code_JPS <- JPS_data$data_JPS$JPS_code[grep(input$select_JPS_periode, substr(JPS_data$data_JPS$JPS_code, 6, 6))]
+      
+    }
   })
   
   
@@ -81,30 +89,15 @@ server <- function(input, output, session) {
     data_JPS_hardcoded()
     
     # Render JPS DT depending on JPS dropdown input
-    if(input$select_JPS_periode != "Y + Q"){
-      
-      datatable(JPS_data$data_JPS_df_final,
-                colnames = JPS_data$data_JPS_df_colnames[-JPS_data$drop_JPS], rownames = F,
-                caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-                options = list(dom = "t",
-                               initComplete = JS( #change colnames fontsize
-                                 "function(settings, json) {",
-                                 "$(this.api().table().header()).css({'color': 'steelblue'});",
-                                 "}"))
-      )
-      
-    }else{
-      
-      datatable(JPS_data$data_JPS_df_final,
-                colnames = JPS_data$data_JPS_df_colnames, rownames = F,
-                caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
-                options = list(dom = "t",
-                               initComplete = JS( #change colnames fontsize
-                                 "function(settings, json) {",
-                                 "$(this.api().table().header()).css({'color': 'steelblue'});",
-                                 "}"))
-      )
-    }
+    datatable(JPS_data$data_JPS_df_final,
+              colnames = JPS_data$data_JPS_df_colnames[JPS_data$select_JPS], rownames = F,
+              caption = htmltools::tags$caption(style = 'caption-side: bottom;','Data retrieved on ', htmltools::em(Sys.time())),
+              options = list(dom = "t",
+                             initComplete = JS( #change colnames fontsize
+                               "function(settings, json) {",
+                               "$(this.api().table().header()).css({'color': 'steelblue'});",
+                               "}"))
+    )
   })
   
   
@@ -175,39 +168,9 @@ server <- function(input, output, session) {
       main_data$data_Sector_R_aggregated <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie + Onderdeel, main_data$data_Sector_R, sum)
       
       # Select only required JPSen
-      # required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))
+      # browser()
+      JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))
       main_data$data_Sector_R_aggregated <- main_data$data_Sector_R_aggregated[main_data$data_Sector_R_aggregated$JPS %in% JPS_data$required_JPS, ]
-      
-      # # Select only required JPSen depending on JPS dropdown input
-      # if(input$select_JPS_periode == "Y + Q"){
-      #   
-      #   required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))
-      #   
-      # }else if(input$select_JPS_periode == "Y"){
-      #   
-      #   required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "Y"]
-      #   
-      # }else if(input$select_JPS_periode == "1"){
-      #   
-      #   required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "1"]
-      #   
-      # }else if(input$select_JPS_periode == "2"){
-      #   
-      #   required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "2"]
-      #   
-      # }else if(input$select_JPS_periode == "3"){
-      #   
-      #   required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "3"]
-      #   
-      # }else if(input$select_JPS_periode == "4"){
-      #   
-      #   required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))[substr(as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)])), 6, 6) == "4"]
-      #   
-      # }
-      
-      # main_data$data_Sector_R_aggregated <- main_data$data_Sector_R_aggregated[main_data$data_Sector_R_aggregated$JPS %in% JPS_data$required_JPS, ]
-      
-      
       
     }) # closing isolate()
   })
@@ -250,12 +213,16 @@ server <- function(input, output, session) {
       temp_nchar <- max(nchar(colnames(main_data$data_Sector_R_reshaped)[4:misc_parameters$ncols]))
       
       # Sort columns
-      main_data$data_Sector_R_reshaped <- main_data$data_Sector_R_reshaped[c(1:3, order(substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 1, 4), 
-                                                                                        substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 8, temp_nchar)) + 3)]
+      if(input$select_JPS_periode == "Y + Q"){
+        
+        main_data$data_Sector_R_reshaped <- main_data$data_Sector_R_reshaped[c(1:3, order(substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 1, 4), 
+                                                                                          substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 8, temp_nchar)) + 3)]
+        
+      }
       
       
       # Summing data over "Onderdeel": initialise if-loop exception (summing only required when N "Onderdeel" > 1)
-      if(length(input$select_onderdeel) > 1){
+      if(length(input$select_onderdeel) > 1 & "Onderdeel" %in% colnames(main_data$data_Sector_R_reshaped)){
         
         # Summing data over "Onderdeel": merge data by "Transactie" & "TransactieSoort"
         temp_onderdeel_split <- split(main_data$data_Sector_R_reshaped, main_data$data_Sector_R_reshaped[, "Onderdeel"])
@@ -267,11 +234,8 @@ server <- function(input, output, session) {
         temp_data_sum_onderdeel <- cbind(temp_data_sum_onderdeel[, c(1, 2)], temp_data_sum_onderdeel[, grep(".x", colnames(temp_data_sum_onderdeel))] + temp_data_sum_onderdeel[, grep(".y", colnames(temp_data_sum_onderdeel))])
         colnames(temp_data_sum_onderdeel) <- gsub(pattern = ".x", replacement = "", x = colnames(temp_data_sum_onderdeel))
         main_data$data_Sector_R_reshaped <- temp_data_sum_onderdeel
+        
       }
-      
-      # Remove onderdeel
-      main_data$data_Sector_R_reshaped$Onderdeel <- NULL
-      
       
       # Sum "all" Onderdeel
       if(all(input$select_onderdeel == "all")){
@@ -285,6 +249,7 @@ server <- function(input, output, session) {
       misc_data$totals_B <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "B", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))), na.rm = TRUE)
       misc_data$totals_M <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "M", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))), na.rm = TRUE)
       misc_data$totals_P <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "P", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))), na.rm = TRUE)
+      
       
       for(i in 1:length(na.omit(unique(main_data$data_Sector_R_reshaped$TransactieSoort)))){
         
@@ -306,7 +271,7 @@ server <- function(input, output, session) {
       }
       
       # Create dataset "bijstelling"
-      if(JPS_data$code_JPS %in% colnames(main_data$data_Sector_R_reshaped)){
+      if(length(grep(JPS_data$code_JPS, colnames(main_data$data_Sector_R_reshaped))) > 0){
         
         temp_JPS_location_last_1 <- which(colnames(main_data$data_Sector_R_reshaped) == JPS_data$code_JPS)
         temp_JPS_location_first_1 <- (temp_JPS_location_last_1 - 4)
@@ -344,7 +309,8 @@ server <- function(input, output, session) {
       
       
       # Create dataset "Q-1/Y-1"
-      if((grep("-Y-", JPS_data$code_JPS) == 1)){
+      # if((grep("-Y-", JPS_data$code_JPS) == 1)){
+      if(length(grep(JPS_data$code_JPS, colnames(main_data$data_Sector_R_reshaped))) > 0){
         
         temp_getcols <- grep(pattern = "-Y-", x = colnames(main_data$data_Sector_R_reshaped))
         temp_Q1Y1_orig <- main_data$data_Sector_R_reshaped[, temp_getcols]
@@ -396,25 +362,58 @@ server <- function(input, output, session) {
       # Save intermediary data
       main_data$data_Sector_R_adjusted1 <- main_data$data_Sector_R_reshaped
       
+      
     }) # closing isolate()
-    
   })
   
-  # Adjust Sector_R data; n column selection
+  
+  # Adjust Sector_R data; JPS selection
   data_Sector_R_adjusted2 <- reactive({
     
     data_Sector_R_adjusted1()
     
+    if(input$select_JPS_periode == "Y + Q"){
+      
+      main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped
+      
+    }else if(input$select_JPS_periode == "1"){
+      
+      main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-1-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
+      
+    }else if(input$select_JPS_periode == "2"){
+      
+      main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-2-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
+      
+    }else if(input$select_JPS_periode == "3"){
+      
+      main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-3-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
+      
+    }else if(input$select_JPS_periode == "4"){
+      
+      main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-4-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
+      
+    }else if(input$select_JPS_periode == "Y"){
+      
+      main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-Y-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
+      
+    }
+  })
+  
+  # Adjust Sector_R data; n column selection
+  data_Sector_R_adjusted3 <- reactive({
+    
+    data_Sector_R_adjusted2()
+    
     # Set number of years after JPS according to dropdown
-    temp <- tail(grep("-", colnames(main_data$data_Sector_R_adjusted1)), (5 * as.integer(input$settings_ncol)))
-    temp <- unique(c((1:(grep("-", colnames(main_data$data_Sector_R_adjusted1))[1] - 1)), temp))
-    main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_adjusted1[, temp]
+    temp <- tail(grep("-", colnames(main_data$data_Sector_R_adjusted2)), (5 * as.integer(input$settings_ncol)))
+    temp <- unique(c((1:(grep("-", colnames(main_data$data_Sector_R_adjusted2))[1] - 1)), temp))
+    main_data$data_Sector_R_adjusted3 <- main_data$data_Sector_R_adjusted2[, temp]
     
     # Update ncols
-    misc_parameters$ncols <- ncol(main_data$data_Sector_R_adjusted2)
+    misc_parameters$ncols <- ncol(main_data$data_Sector_R_adjusted3)
     
     # Finalise dataset 
-    main_data$data_Sector_R_final <- main_data$data_Sector_R_adjusted2
+    main_data$data_Sector_R_final <- main_data$data_Sector_R_adjusted3
     
   })
   
@@ -422,7 +421,7 @@ server <- function(input, output, session) {
   # Render Sector_R data
   output$data_Sector_R <- renderDT({
     
-    data_Sector_R_adjusted2()
+    data_Sector_R_adjusted3()
     
     # Check to see if user selected JPS before trying to view data Sector_R
     if(any(is.na(JPS_data$data_JPS)) & is.na(JPS_data$code_JPS)){
