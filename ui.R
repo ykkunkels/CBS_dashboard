@@ -1,10 +1,11 @@
 
 ########################################
 ### TEST Shiny CBS Dashboard         ###
-### UI version 0.0.33                ###
-### YKK - 05-12-2023                 ###
+### UI version 0.0.34                ###
+### YKK - 12-12-2023                 ###
 ### Change log:                      ###
-###   > JPS Periode selectable       ###
+###   > Multiple Sector selection    ###
+###   > Multiple Rekening selection  ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 ## 0. Basic Operations -------------------------------------------------------------------------------------------------------------
@@ -50,7 +51,7 @@ ui <- dashboardPage(skin = "blue",
                                                  menuItem("Instellingen", tabName = "instellingen_tab", icon = icon("cog")),
                                                  
                                                  uiOutput("logo", style = "background-color: white;"),
-                                                 h5("version 0.0.33", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
+                                                 h5("version 0.0.34", style = "font-style: normal; letter-spacing: 1px; line-height: 26pt; 
                                                     position: relative; left: 30px;")
                                      ) # closing sidebarMenu()
                     ), # closing dashboardSidebar()
@@ -147,7 +148,7 @@ ui <- dashboardPage(skin = "blue",
                                                          fluidRow(
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_sector", label = "", width = "125px",
-                                                                              selected = "S.11",
+                                                                              selected = "S.11", multiple = TRUE,
                                                                               choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
                                                                                                                Database = "HSR_ANA_PRD"), 
                                                                                                      paste0("SELECT DISTINCT Sector FROM tbl_SR_Data_Transacties ORDER BY Sector")))
@@ -156,7 +157,7 @@ ui <- dashboardPage(skin = "blue",
                                                            
                                                            column(width = 1, style = "margin-top: -25px; margin-bottom: -25px;",
                                                                   selectInput(inputId = "select_rekening", label = "", width = "125px",
-                                                                              selected = "LT",
+                                                                              selected = "LT", multiple = TRUE,
                                                                               choices = c(dbGetQuery(dbConnect(odbc(), Driver = "SQL SERVER", Server = "SQL_HSR_ANA_PRD\\i01,50001", 
                                                                                                                Database = "HSR_ANA_PRD"), 
                                                                                                      paste0("SELECT DISTINCT Rekening FROM tbl_SR_Data_Transacties")))

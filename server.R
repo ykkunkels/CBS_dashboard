@@ -1,8 +1,8 @@
 
 ################################
 ### TEST Shiny CBS Dashboard ###
-### Server version 0.0.33    ###
-### YKK - 05-12-2023         ###
+### Server version 0.0.34    ###
+### YKK - 12-12-2023         ###
 ###~*~*~*~*~*~*~*~*~*~*~*~*~*###
 
 server <- function(input, output, session) {
@@ -11,7 +11,7 @@ server <- function(input, output, session) {
   # Define & initialise reactiveValues objects: parameters
   SQL_parameters <- reactiveValues(connection = NA, query = NA, query_JPS = NA)
   selection_parameters <- reactiveValues(select_transactiesoort = NA, select_onderdeel = NA)
-  misc_parameters <- reactiveValues(ncols = NA)
+  misc_parameters <- reactiveValues(ncols = NA, ndescriptives = NA)
   plot_parameters <- reactiveValues(temp_drop = 0, labels = NA)
   user_parameters <- reactiveValues(feedback_save = TRUE)
   
@@ -39,8 +39,6 @@ server <- function(input, output, session) {
     
     JPS_data$data_JPS <- dbGetQuery(SQL_parameters$connection, SQL_parameters$query_JPS)
     
-    # JPS_data$code_JPS <- JPS_data$data_JPS$JPS_code[1]
-    
   })
   
   # Hard-code JPS data dataframe
@@ -58,7 +56,6 @@ server <- function(input, output, session) {
       ), nrow = 5, ncol = 6
       )
     )
-    
     
     
     if(input$select_JPS_periode == "Y + Q"){
@@ -129,7 +126,11 @@ server <- function(input, output, session) {
       
     }else if(all(input$select_transactiesoort == "all" & any(input$select_onderdeel != "all"))){
       
-      temp_data <- main_data$data_Sector_R_early[which(main_data$data_Sector_R_early$Sector == input$select_sector), ]
+      # Exception for multiple onderdelen
+      if(length(input$select_onderdeel) > 1){
+        temp_data <- main_data$data_Sector_R_early[which(main_data$data_Sector_R_early$Sector %in% input$select_sector), ]
+      }else{temp_data <- main_data$data_Sector_R_early[which(main_data$data_Sector_R_early$Sector == input$select_sector), ]}
+      
       temp_data <- temp_data[temp_data$Onderdeel %in% input$select_onderdeel, ]
       temp_data <- temp_data[which(temp_data$Rekening == input$select_rekening), ]
       
@@ -165,10 +166,10 @@ server <- function(input, output, session) {
                                             main_data$data_Sector_R$Status)
       
       # Aggregate data to sum over values
-      main_data$data_Sector_R_aggregated <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie + Onderdeel, main_data$data_Sector_R, sum)
+      main_data$data_Sector_R_aggregated <- aggregate(Waarde ~ JPS + Rekening + TransactieSoort + Transactie + Onderdeel + Sector, 
+                                                      main_data$data_Sector_R, sum)
       
       # Select only required JPSen
-      # browser()
       JPS_data$required_JPS <- as.character(unlist(JPS_data$data_JPS[c(2:5, 1), c(2, 1, 3)]))
       main_data$data_Sector_R_aggregated <- main_data$data_Sector_R_aggregated[main_data$data_Sector_R_aggregated$JPS %in% JPS_data$required_JPS, ]
       
@@ -181,7 +182,8 @@ server <- function(input, output, session) {
     data_Sector_R_aggregated()
     
     # Reshape data from long to wide    
-    main_data$data_Sector_R_reshaped <- reshape(main_data$data_Sector_R_aggregated, direction = 'wide', idvar = c("Transactie", "TransactieSoort", "Onderdeel"), timevar = "JPS")
+    main_data$data_Sector_R_reshaped <- reshape(main_data$data_Sector_R_aggregated, direction = 'wide', 
+                                                idvar = c("Transactie", "TransactieSoort", "Sector", "Rekening", "Onderdeel"), timevar = "JPS")
     
   })
   
@@ -210,32 +212,96 @@ server <- function(input, output, session) {
       
       # Initialise variables to sort columns
       misc_parameters$ncols <- ncol(main_data$data_Sector_R_reshaped)
-      temp_nchar <- max(nchar(colnames(main_data$data_Sector_R_reshaped)[4:misc_parameters$ncols]))
+      misc_parameters$ndescriptives <- max(grep(pattern = "-", x = colnames(main_data$data_Sector_R_reshaped), invert = TRUE))
+      temp_nchar <- max(nchar(colnames(main_data$data_Sector_R_reshaped)[(misc_parameters$ndescriptives + 1):misc_parameters$ncols]))
       
       # Sort columns
       if(input$select_JPS_periode == "Y + Q"){
         
-        main_data$data_Sector_R_reshaped <- main_data$data_Sector_R_reshaped[c(1:3, order(substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 1, 4), 
-                                                                                          substr(colnames(main_data$data_Sector_R_reshaped[4:misc_parameters$ncols]), 8, temp_nchar)) + 3)]
+        main_data$data_Sector_R_reshaped <- main_data$data_Sector_R_reshaped[c(1:misc_parameters$ndescriptives, order(substr(colnames(main_data$data_Sector_R_reshaped[(misc_parameters$ndescriptives + 1):misc_parameters$ncols]), 1, 4), 
+                                                                                                                      substr(colnames(main_data$data_Sector_R_reshaped[(misc_parameters$ndescriptives + 1):misc_parameters$ncols]), 8, temp_nchar)) + 5)]
         
       }
       
+      # Summing data over "Rekening": initialise if-loop exception (summing only required when N "Rekening" > 1)
+      if(length(input$select_rekening) > 1 & "Rekening" %in% colnames(main_data$data_Sector_R_reshaped)){
+        
+        # Summing data over "Rekening": merge data by "Transactie" & "TransactieSoort"
+        temp_rekening_split <- split(main_data$data_Sector_R_reshaped, main_data$data_Sector_R_reshaped[, "Rekening"])
+        
+        temp_rekening_merge_by <- c("Transactie", "TransactieSoort", "Rekening", "Sector", "Onderdeel")
+        
+        if(!any(temp_rekening_split[[1]]$Transactie %in% temp_rekening_split[[2]]$Transactie)){
+          temp_rekening_merge_by <- temp_rekening_merge_by[temp_rekening_merge_by != "Transactie"]
+        }
+        if(!any(temp_rekening_split[[1]]$TransactieSoort %in% temp_rekening_split[[2]]$TransactieSoort)){
+          temp_rekening_merge_by <- temp_rekening_merge_by[temp_rekening_merge_by != "TransactieSoort"]
+        }
+        if(!any(temp_rekening_split[[1]]$Rekening %in% temp_rekening_split[[2]]$Rekening)){
+          temp_rekening_merge_by <- temp_rekening_merge_by[temp_rekening_merge_by != "Rekening"]
+        }
+        if(!any(temp_rekening_split[[1]]$Onderdeel %in% temp_rekening_split[[2]]$Onderdeel)){
+          temp_rekening_merge_by <- temp_rekening_merge_by[temp_rekening_merge_by != "Onderdeel"]
+        }
+        if(!any(temp_rekening_split[[1]]$Sector %in% temp_rekening_split[[2]]$Sector)){
+          temp_rekening_merge_by <- temp_rekening_merge_by[temp_rekening_merge_by != "Sector"]
+        }
+        
+        temp_data_sum_rekening <- merge(temp_rekening_split[[1]], temp_rekening_split[[2]], by = temp_rekening_merge_by)
+        
+        
+        # Check if temp_data_sum_rekening has any data, or has repeating values. If so, merge was not appropriate and rbind() should be employed 
+        if(nrow(temp_data_sum_rekening) == 0 | table(temp_data_sum_rekening[7])[[1]] > 4){
+          
+          temp_data_sum_rekening <- rbind(temp_rekening_split[[1]], temp_rekening_split[[2]]) #! KLOPT DIT?
+          
+          temp_data_sum_rekening[, grep("Rekening", colnames(temp_data_sum_rekening))] <- NULL
+          temp_data_sum_rekening[is.na(temp_data_sum_rekening)] <- 0 # set NA's to zero
+          
+        }else{
+          
+          # Summing data over "Rekening": fix cols and colnames, and assign to main_data
+          temp_data_sum_rekening[, grep("Rekening", colnames(temp_data_sum_rekening))] <- NULL
+          temp_data_sum_rekening[is.na(temp_data_sum_rekening)] <- 0 # set NA's to zero
+          temp_data_sum_rekening <- cbind(temp_data_sum_rekening[, c(1, 2)], temp_data_sum_rekening[, grep(".x", colnames(temp_data_sum_rekening))] + temp_data_sum_rekening[, grep(".y", colnames(temp_data_sum_rekening))])
+          colnames(temp_data_sum_rekening) <- gsub(pattern = ".x", replacement = "", x = colnames(temp_data_sum_rekening))
+          main_data$data_Sector_R_reshaped <- temp_data_sum_rekening
+          
+        }
+      }
+      
+      # Sum "all" Rekening
+      if(all(input$select_rekening == "all")){
+        temp_onderdeel_loc <- which(colnames(main_data$data_Sector_R_reshaped) == "Onderdeel")
+        main_data$data_Sector_R_reshaped[is.na(main_data$data_Sector_R_reshaped)] <- 0
+        main_data$data_Sector_R_reshaped <- aggregate(. ~ Transactie + TransactieSoort, main_data$data_Sector_R_reshaped[, -temp_onderdeel_loc], sum)
+      }
       
       # Summing data over "Onderdeel": initialise if-loop exception (summing only required when N "Onderdeel" > 1)
-      if(length(input$select_onderdeel) > 1 & "Onderdeel" %in% colnames(main_data$data_Sector_R_reshaped)){
+      if(length(input$select_onderdeel) > 1 & 
+         "Onderdeel" %in% colnames(main_data$data_Sector_R_reshaped) & 
+         length(unique(main_data$data_Sector_R_reshaped$Onderdeel)) > 1){
         
         # Summing data over "Onderdeel": merge data by "Transactie" & "TransactieSoort"
         temp_onderdeel_split <- split(main_data$data_Sector_R_reshaped, main_data$data_Sector_R_reshaped[, "Onderdeel"])
-        temp_data_sum_onderdeel <- merge(temp_onderdeel_split[[1]], temp_onderdeel_split[[2]], by = c("Transactie", "TransactieSoort"))
+        temp_data_sum_onderdeel <- merge(temp_onderdeel_split[[1]], temp_onderdeel_split[[2]], by = c("Transactie", "TransactieSoort", "Rekening", "Sector"))
         
         # Summing data over "Onderdeel": fix cols and colnames, and assign to main_data
         temp_data_sum_onderdeel[, grep("Onderdeel", colnames(temp_data_sum_onderdeel))] <- NULL
         temp_data_sum_onderdeel[is.na(temp_data_sum_onderdeel)] <- 0 # set NA's to zero
+        
         temp_data_sum_onderdeel <- cbind(temp_data_sum_onderdeel[, c(1, 2)], temp_data_sum_onderdeel[, grep(".x", colnames(temp_data_sum_onderdeel))] + temp_data_sum_onderdeel[, grep(".y", colnames(temp_data_sum_onderdeel))])
         colnames(temp_data_sum_onderdeel) <- gsub(pattern = ".x", replacement = "", x = colnames(temp_data_sum_onderdeel))
         main_data$data_Sector_R_reshaped <- temp_data_sum_onderdeel
         
       }
+      
+      # set NA's to zero
+      main_data$data_Sector_R_reshaped[is.na(main_data$data_Sector_R_reshaped)] <- 0
+      
+      # Drop columns with only identical data
+      temp_drop <- as.integer(which(apply((cbind(main_data$data_Sector_R_reshaped[, grep(pattern = "-", x = colnames(main_data$data_Sector_R_reshaped), invert = TRUE)])), 2, function(a) length(unique(a)) == 1) == TRUE))
+      if(length(temp_drop) > 0){main_data$data_Sector_R_reshaped <- main_data$data_Sector_R_reshaped[, -temp_drop]}
       
       # Sum "all" Onderdeel
       if(all(input$select_onderdeel == "all")){
@@ -245,12 +311,12 @@ server <- function(input, output, session) {
       }
       
       # Get TransactieSoort totals
-      misc_data$totals_A <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "A", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))), na.rm = TRUE)
-      misc_data$totals_B <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "B", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))), na.rm = TRUE)
-      misc_data$totals_M <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "M", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))), na.rm = TRUE)
-      misc_data$totals_P <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "P", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))), na.rm = TRUE)
+      misc_data$totals_A <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "A", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel", "Rekening", "Sector"))), na.rm = TRUE)
+      misc_data$totals_B <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "B", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel", "Rekening", "Sector"))), na.rm = TRUE)
+      misc_data$totals_M <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "M", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel", "Rekening", "Sector"))), na.rm = TRUE)
+      misc_data$totals_P <- colSums(main_data$data_Sector_R_reshaped[main_data$data_Sector_R_reshaped$TransactieSoort == "P", ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel", "Rekening", "Sector"))), na.rm = TRUE)
       
-      
+      # Add TransactieSoort totals
       for(i in 1:length(na.omit(unique(main_data$data_Sector_R_reshaped$TransactieSoort)))){
         
         # Add an empty row for every TransactieSoort totals
@@ -265,7 +331,7 @@ server <- function(input, output, session) {
           main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), "Onderdeel"] <- main_data$data_Sector_R_reshaped[1, "Onderdeel"]
         }
         
-        temp_target_cols <- colnames(main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel"))))
+        temp_target_cols <- colnames(main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), ] %>% select(-any_of(c("TransactieSoort", "Transactie", "Onderdeel", "Rekening", "Sector"))))
         main_data$data_Sector_R_reshaped[nrow(main_data$data_Sector_R_reshaped), temp_target_cols] <- eval(parse(text = paste0("misc_data$totals_", unique(main_data$data_Sector_R_reshaped$TransactieSoort)[i])))
         
       }
@@ -307,9 +373,7 @@ server <- function(input, output, session) {
         }
       }
       
-      
       # Create dataset "Q-1/Y-1"
-      # if((grep("-Y-", JPS_data$code_JPS) == 1)){
       if(length(grep(JPS_data$code_JPS, colnames(main_data$data_Sector_R_reshaped))) > 0){
         
         temp_getcols <- grep(pattern = "-Y-", x = colnames(main_data$data_Sector_R_reshaped))
@@ -326,7 +390,8 @@ server <- function(input, output, session) {
       } else{
         
         temp_getcols <- grep(pattern = "-Y-", x = colnames(main_data$data_Sector_R_reshaped))
-        temp_Q1Y1_orig <- main_data$data_Sector_R_reshaped[, -c(1, 2, temp_getcols)]
+        temp_getcols <- c(grep(pattern = "-", x = colnames(main_data$data_Sector_R_reshaped), invert = TRUE), temp_getcols)
+        temp_Q1Y1_orig <- main_data$data_Sector_R_reshaped[, -c(temp_getcols)]
         temp_Q1Y1_diff <- data.frame(matrix(0, nrow(temp_Q1Y1_orig), (ncol(temp_Q1Y1_orig) - 1)))
         
         for(i in ncol(temp_Q1Y1_orig):2){
@@ -340,6 +405,7 @@ server <- function(input, output, session) {
       
       # Create dataset "Q-4/Y-1"
       temp_getcols <- grep(pattern = "-Y-", x = colnames(main_data$data_Sector_R_reshaped))
+      temp_getcols <- c(grep(pattern = "-", x = colnames(main_data$data_Sector_R_reshaped), invert = TRUE), temp_getcols)
       temp_Q4Y1_orig <- main_data$data_Sector_R_reshaped[, -c(1, 2, temp_getcols)]
       temp_Q4Y1_diff <- data.frame(matrix(0, nrow(temp_Q4Y1_orig), (ncol(temp_Q4Y1_orig) - 1)))
       
@@ -351,8 +417,9 @@ server <- function(input, output, session) {
       main_data$data_Sector_R_Q4Y1 <- cbind(main_data$data_Sector_R_reshaped[, 1:2], temp_Q4Y1_orig, temp_Q4Y1_diff)
       
       
-      # Add decimal points (#! This is only a cosmetic change, but can introduce errors down the line (i.e., data is now character instead of numeric(!)))
-      for(i in 3:(ncol(main_data$data_Sector_R_reshaped))){
+      # Add decimal points 
+      temp_start <- (tail(grep(pattern = "-", x = colnames(main_data$data_Sector_R_reshaped), invert = TRUE), 1) + 1)
+      for(i in temp_start:(ncol(main_data$data_Sector_R_reshaped))){
         main_data$data_Sector_R_reshaped[, i] <- prettyNum(as.vector(main_data$data_Sector_R_reshaped[, i]), big.mark = ".", big.interval = 3L, decimal.mark = ",", scientific = FALSE)
       }
       
@@ -373,29 +440,17 @@ server <- function(input, output, session) {
     data_Sector_R_adjusted1()
     
     if(input$select_JPS_periode == "Y + Q"){
-      
       main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped
-      
     }else if(input$select_JPS_periode == "1"){
-      
       main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-1-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
-      
     }else if(input$select_JPS_periode == "2"){
-      
       main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-2-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
-      
     }else if(input$select_JPS_periode == "3"){
-      
       main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-3-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
-      
     }else if(input$select_JPS_periode == "4"){
-      
       main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-4-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
-      
     }else if(input$select_JPS_periode == "Y"){
-      
       main_data$data_Sector_R_adjusted2 <- main_data$data_Sector_R_reshaped[, c(1, 2, grep("-Y-", substr(colnames(main_data$data_Sector_R_reshaped), 5, 7)))]
-      
     }
   })
   
